@@ -1,0 +1,156 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap");
+@import "tailwindcss";
+
+/*
+ * Worker Agent.Cloud — Vibe theme
+ * Reference: neon cyber / retrowave IDE aesthetic (magenta · cyan · lime on
+ * deep purple-black). Semantic token names preserved so existing screens
+ * inherit the palette without a mass class rewrite.
+ *
+ *   amber  → neon lime     — agent working / primary CTA
+ *   teal   → electric cyan — verified / safe / secondary glow
+ *   coral  → hot magenta   — failed / blocked / brand heat
+ *   violet → vivid pink    — human action only
+ */
+@theme {
+  --color-ink: #05030c;
+  --color-surface: #0e0a18;
+  --color-surface-raised: #161022;
+  --color-line: #2a2040;
+  --color-text-primary: #f4f0ff;
+  --color-text-muted: #8b82a8;
+  --color-amber: #b8ff3c;
+  --color-teal: #00e8f0;
+  --color-coral: #ff3d8a;
+  --color-violet: #ff2bd6;
+
+  --font-display: "Syne", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+:root {
+  --glow-cyan: 0 0 20px rgba(0, 232, 240, 0.45), 0 0 48px rgba(0, 232, 240, 0.15);
+  --glow-magenta: 0 0 20px rgba(255, 61, 138, 0.45), 0 0 48px rgba(255, 45, 214, 0.18);
+  --glow-lime: 0 0 18px rgba(184, 255, 60, 0.4), 0 0 40px rgba(184, 255, 60, 0.12);
+  --border-neon: linear-gradient(135deg, #ff2bd6, #00e8f0, #b8ff3c);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2040 transparent;
+}
+
+body {
+  background-color: var(--color-ink);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 45, 214, 0.14), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(0, 232, 240, 0.1), transparent 50%),
+    radial-gradient(ellipse 50% 30% at 0% 100%, rgba(184, 255, 60, 0.06), transparent 45%),
+    linear-gradient(rgba(42, 32, 64, 0.35) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(42, 32, 64, 0.35) 1px, transparent 1px);
+  background-size:
+    auto,
+    auto,
+    auto,
+    48px 48px,
+    48px 48px;
+  background-attachment: fixed;
+}
+
+/* —— Shared vibe utilities (use beside semantic tokens) —— */
+
+.vibe-panel {
+  border: 1px solid color-mix(in srgb, var(--color-teal) 28%, var(--color-line));
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  box-shadow: var(--glow-cyan);
+  border-radius: 1rem;
+}
+
+.vibe-panel-hot {
+  border: 1px solid color-mix(in srgb, var(--color-coral) 40%, var(--color-line));
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  box-shadow: var(--glow-magenta);
+  border-radius: 1rem;
+}
+
+.vibe-frame {
+  position: relative;
+  border-radius: 1.25rem;
+  background: var(--color-surface);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-coral) 55%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--color-teal) 35%, transparent),
+    var(--glow-magenta);
+}
+
+.btn-vibe-primary {
+  background: var(--color-amber);
+  color: #0a0a0a;
+  font-weight: 600;
+  border-radius: 9999px;
+  box-shadow: var(--glow-lime);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.btn-vibe-primary:hover:not(:disabled) {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+.btn-vibe-primary:disabled {
+  opacity: 0.35;
+}
+
+.btn-vibe-secondary {
+  background: transparent;
+  color: var(--color-teal);
+  border: 1px solid var(--color-teal);
+  border-radius: 9999px;
+  box-shadow: var(--glow-cyan);
+  font-weight: 600;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.btn-vibe-secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-teal) 12%, transparent);
+}
+.btn-vibe-secondary:disabled {
+  opacity: 0.35;
+}
+
+.text-vibe-brand {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(120deg, var(--color-coral), var(--color-violet), var(--color-teal));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+code,
+pre,
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-teal) 35%, transparent);
+  color: var(--color-text-primary);
+}
+
+input,
+textarea,
+select {
+  caret-color: var(--color-teal);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--color-teal) 55%, var(--color-line)) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-teal) 30%, transparent);
+}

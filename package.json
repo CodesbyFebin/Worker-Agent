@@ -1,0 +1,21 @@
+{
+  "name": "worker-agent-cloud",
+  "private": true,
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "workspaces": ["client", "server"],
+  "scripts": {
+    "dev:server": "npm run dev --workspace=server",
+    "dev:client": "npm run dev --workspace=client",
+    "db:generate": "node --env-file=.env ./node_modules/drizzle-kit/bin.cjs generate --config=drizzle.config.ts",
+    "db:push": "node --env-file=.env ./node_modules/drizzle-kit/bin.cjs push --config=drizzle.config.ts --force",
+    "local:infra": "powershell -ExecutionPolicy Bypass -File ./scripts/start-local-infra.ps1"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^4.36.1",
+    "drizzle-kit": "^0.24.2",
+    "typescript": "^5.5.4"
+  }
+}

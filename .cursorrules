@@ -1,0 +1,24 @@
+This is WorkerAgent.Cloud, a multi-agent content/dev automation platform.
+Follow these rules on every change:
+1. NEVER present mock, placeholder, or hardcoded fake data as if it were a
+   real integration. If you can't wire a real API in this pass, write a
+   function that throws a clear "not implemented" error — do not return
+   canned fake data that looks plausible. (This project has already had to
+   rip out one "research protocol" that always returned the same fake
+   article regardless of query — do not reintroduce that pattern anywhere.)
+2. NEVER invent specific metrics, accuracy percentages, or benchmark
+   numbers in comments, docs, or UI copy (e.g. "99.2% accuracy") unless
+   they come from an actual test run you executed. If you don't have real
+   numbers, say so, or omit the claim.
+3. Every external integration (API, service, library) must use REAL
+   endpoints/SDKs and real request/response shapes — verify against actual
+   docs, don't guess a plausible-looking shape.
+4. When something is a deliberate scope cut or known limitation, say so
+   explicitly in a code comment and in README.md's "Known limits" section
+   — don't silently ship a partial implementation as if it were complete.
+5. Match the existing file/folder conventions exactly (see "Directory
+   structure" below) — one file per agent/service/router, not monoliths.
+6. Every new DB change goes through drizzle/schema.ts + relations.ts, with
+   real foreign keys and indexes, not loose columns.
+7. Before adding a new npm dependency, check if the existing dependency
+   list already covers it.
