@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -12,7 +12,12 @@ import {
 } from "lucide-react";
 import { trpc } from "../../lib/trpc";
 import { ModelChooser } from "../../components/ModelChooser";
-import type { AgentTaskStatus } from "../../../../shared/types";
+import { MonacoEditorPane } from "./MonacoEditorPane";
+import { IdeTerminalPanel } from "./IdeTerminalPanel";
+import { IdeWorktreesPanel } from "./IdeWorktreesPanel";
+import { IdePatchReviewPanel } from "./IdePatchReviewPanel";
+import { IdeBrowserPreview } from "./IdeBrowserPreview";
+import { IdeAgentInspector } from "./IdeAgentInspector";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL ?? "http://localhost:4000/trpc").replace(/\/trpc\/?$/, "");
 
@@ -42,8 +47,8 @@ const ROLE_LABEL: Record<string, string> = {
   seo: "SEO",
 };
 
-type CmdTab = "chat" | "plan" | "memory" | "tools";
-type BottomTab = "workflow" | "graph" | "terminal" | "models";
+type CmdTab = "chat" | "plan" | "inspect" | "tools";
+type BottomTab = "workflow" | "terminal" | "patches" | "worktrees" | "preview" | "models";
 
 function TreeNode({
   entryPath,
@@ -239,21 +244,34 @@ export function IdeWorkspace() {
   ]);
   const [rootTaskId, setRootTaskId] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedWorktreeId, setSelectedWorktreeId] = useState<string | null>(null);
   const [sseStatus, setSseStatus] = useState<"connecting" | "live" | "down">("connecting");
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
 
   const fileQuery = trpc.ide.readFile.useQuery(
     { path: activeFile! },
     { enabled: Boolean(activeFile) },
   );
 
+  const writeFile = trpc.ide.writeFile.useMutation({
+    onSuccess: async () => {
+      setSaveMsg("Saved");
+      if (activeFile) await utils.ide.readFile.invalidate({ path: activeFile });
+    },
+    onError: (e) => setSaveMsg(e.message),
+  });
+
+  const handleSave = useCallback(
+    async (content: string) => {
+      if (!activeFile) return;
+      await writeFile.mutateAsync({ path: activeFile, content });
+    },
+    [activeFile, writeFile],
+  );
+
   const treeQuery = trpc.godMachine.getTaskTree.useQuery(
     { rootTaskId: rootTaskId! },
     { enabled: Boolean(rootTaskId), refetchInterval: 2500 },
-  );
-
-  const taskDetail = trpc.ide.getTask.useQuery(
-    { taskId: selectedTaskId! },
-    { enabled: Boolean(selectedTaskId), refetchInterval: 3000 },
   );
 
   const dispatch = trpc.godMachine.dispatchGoal.useMutation({
@@ -429,9 +447,7 @@ export function IdeWorkspace() {
                     {ROLE_LABEL[agent.role] ?? agent.role}
                   </p>
                   <p className="truncate text-[10px] text-[var(--color-text-muted)]">
-                    {agent.status === "idle"
-                      ? "Idle"
-                      : agent.latestTask?.title ?? agent.status}
+                    {!agent.latestTask ? "Idle" : agent.latestTask.title ?? agent.status}
                   </p>
                 </div>
               </button>
@@ -440,7 +456,7 @@ export function IdeWorkspace() {
         </aside>
 
         {/* Center: editor */}
-        <section className="flex min-w-0 flex-1 flex-col bg-[var(--color-ink)]">
+        <section className="relative flex min-w-0 flex-1 flex-col bg-[var(--color-ink)]">
           <div className="flex h-9 shrink-0 items-end gap-0.5 overflow-x-auto border-b border-[var(--color-line)] bg-[var(--color-surface)] px-1">
             {tabs.length === 0 && (
               <span className="px-3 py-2 text-[11px] text-[var(--color-text-muted)]">No file open</span>
@@ -464,15 +480,16 @@ export function IdeWorkspace() {
             ))}
           </div>
 
-          <div className="min-h-0 flex-1 overflow-auto">
+          <div className="min-h-0 flex-1 overflow-hidden">
             {!activeFile && (
               <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
                 <p className="font-[var(--font-display)] text-sm tracking-wide text-[var(--color-text-primary)]">
                   Build with your agent team
                 </p>
                 <p className="max-w-md text-xs text-[var(--color-text-muted)]">
-                  Open a file from the explorer, or dispatch a goal in the Command Center. Swarm status and
-                  plans come from real `agent_tasks` — not mock agents.
+                  Open a file from the explorer (Monaco), run allowlisted tests in Terminal, review
+                  patches, manage worktrees, or preview the app. Swarm status comes from real
+                  `agent_tasks`.
                 </p>
               </div>
             )}
@@ -483,21 +500,18 @@ export function IdeWorkspace() {
               <p className="p-4 text-sm text-[var(--color-coral)]">{fileQuery.error.message}</p>
             )}
             {activeFile && fileQuery.data && (
-              <pre className="p-4 font-[var(--font-display)] text-[12px] leading-5 text-[#c8d0e0]">
-                <code>
-                  {fileQuery.data.content.split("\n").map((line, i) => (
-                    <div key={i} className="flex">
-                      <span className="w-10 shrink-0 select-none pr-3 text-right text-[var(--color-text-muted)] opacity-50">
-                        {i + 1}
-                      </span>
-                      <span className="flex-1 whitespace-pre-wrap break-all">{line || " "}</span>
-                    </div>
-                  ))}
-                </code>
-                {fileQuery.data.truncated && (
-                  <p className="mt-2 text-[var(--color-amber)]">Preview truncated</p>
-                )}
-              </pre>
+              <MonacoEditorPane
+                path={activeFile}
+                content={fileQuery.data.content}
+                truncated={fileQuery.data.truncated}
+                onSave={handleSave}
+                saving={writeFile.isPending}
+              />
+            )}
+            {saveMsg && (
+              <p className="absolute bottom-2 right-2 rounded bg-[var(--color-surface)] px-2 py-1 text-[10px] text-[var(--color-text-muted)]">
+                {saveMsg}
+              </p>
             )}
           </div>
         </section>
@@ -505,7 +519,7 @@ export function IdeWorkspace() {
         {/* Right: Command Center */}
         <aside className="flex w-72 shrink-0 flex-col border-l border-[var(--color-line)] bg-[var(--color-surface)] lg:w-80">
           <div className="flex border-b border-[var(--color-line)]">
-            {(["chat", "plan", "memory", "tools"] as CmdTab[]).map((t) => (
+            {(["chat", "plan", "inspect", "tools"] as CmdTab[]).map((t) => (
               <button
                 key={t}
                 type="button"
@@ -605,36 +619,17 @@ export function IdeWorkspace() {
               </div>
             )}
 
-            {cmdTab === "memory" && (
-              <div className="space-y-2">
-                <p className="text-[11px] text-[var(--color-text-muted)]">
-                  Recent tasks (persisted in MySQL) — not a vector memory store.
-                </p>
-                {(recent ?? []).slice(0, 15).map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setSelectedTaskId(t.id)}
-                    className="block w-full rounded border border-[var(--color-line)] px-2 py-1.5 text-left hover:bg-[var(--color-ink)]"
-                  >
-                    <p className="truncate text-[11px]">{t.title}</p>
-                    <p className="font-[var(--font-display)] text-[10px] text-[var(--color-text-muted)]">
-                      {t.agentRole} · {t.status}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            )}
+            {cmdTab === "inspect" && <IdeAgentInspector taskId={selectedTaskId} />}
 
             {cmdTab === "tools" && (
               <div className="space-y-3 text-[12px]">
                 <p className="text-[var(--color-text-muted)]">Wired integrations (real status):</p>
                 <ul className="space-y-1 text-[var(--color-text-primary)]">
-                  <li>· God Machine orchestration + BullMQ</li>
+                  <li>· Monaco editor + path-safe write (`script:write`)</li>
+                  <li>· Allowlisted terminal (typecheck / lint / test / git)</li>
                   <li>· Git worktrees (`GOD_MACHINE_REPO_ROOT`)</li>
-                  <li>· Anthropic LLM (required at boot)</li>
-                  <li>· Search: Tavily / Brave / Serper when keyed</li>
-                  <li>· Publish adapters when platform tokens set</li>
+                  <li>· Patch review + PR draft / open (needs GITHUB_*)</li>
+                  <li>· Browser preview iframe</li>
                 </ul>
                 {awaiting && awaiting.length > 0 && (
                   <div className="rounded border border-[var(--color-violet)] p-2">
@@ -642,25 +637,41 @@ export function IdeWorkspace() {
                       Needs you
                     </p>
                     {awaiting.map((t) => (
-                      <p key={t.id} className="mt-1 text-[11px]">
+                      <button
+                        key={t.id}
+                        type="button"
+                        className="mt-1 block text-left text-[11px] hover:underline"
+                        onClick={() => {
+                          setSelectedTaskId(t.id);
+                          setCmdTab("inspect");
+                        }}
+                      >
                         {t.title}
-                      </p>
+                      </button>
                     ))}
                   </div>
                 )}
-                {selectedTaskId && taskDetail.data && (
-                  <div className="rounded border border-[var(--color-line)] bg-[var(--color-ink)] p-2">
-                    <p className="font-[var(--font-display)] text-[10px] uppercase text-[var(--color-text-muted)]">
-                      Inspect
-                    </p>
-                    <p className="mt-1 text-[11px]">{taskDetail.data.task.title}</p>
-                    {taskDetail.data.inspection.reasoning && (
-                      <p className="mt-1 italic text-[var(--color-text-muted)]">
-                        {taskDetail.data.inspection.reasoning}
+                <div>
+                  <p className="font-[var(--font-display)] text-[10px] uppercase text-[var(--color-text-muted)]">
+                    Recent tasks
+                  </p>
+                  {(recent ?? []).slice(0, 10).map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedTaskId(t.id);
+                        setCmdTab("inspect");
+                      }}
+                      className="mt-1 block w-full rounded border border-[var(--color-line)] px-2 py-1 text-left hover:bg-[var(--color-ink)]"
+                    >
+                      <p className="truncate text-[11px]">{t.title}</p>
+                      <p className="font-[var(--font-display)] text-[10px] text-[var(--color-text-muted)]">
+                        {t.agentRole} · {t.status}
                       </p>
-                    )}
-                  </div>
-                )}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -668,13 +679,15 @@ export function IdeWorkspace() {
       </div>
 
       {/* Bottom panel */}
-      <div className="flex h-44 shrink-0 flex-col border-t border-[var(--color-line)] bg-[var(--color-surface)]">
-        <div className="flex items-center gap-1 border-b border-[var(--color-line)] px-2">
+      <div className="flex h-52 shrink-0 flex-col border-t border-[var(--color-line)] bg-[var(--color-surface)]">
+        <div className="flex items-center gap-1 overflow-x-auto border-b border-[var(--color-line)] px-2">
           {(
             [
               ["workflow", "Workflow"],
-              ["graph", "Knowledge"],
               ["terminal", "Terminal"],
+              ["patches", "Patches"],
+              ["worktrees", "Worktrees"],
+              ["preview", "Preview"],
               ["models", "Models"],
             ] as const
           ).map(([id, label]) => (
@@ -682,7 +695,7 @@ export function IdeWorkspace() {
               key={id}
               type="button"
               onClick={() => setBottomTab(id)}
-              className={`px-3 py-1.5 font-[var(--font-display)] text-[10px] uppercase tracking-wide ${
+              className={`shrink-0 px-3 py-1.5 font-[var(--font-display)] text-[10px] uppercase tracking-wide ${
                 bottomTab === id ? "text-[var(--color-teal)]" : "text-[var(--color-text-muted)]"
               }`}
             >
@@ -711,7 +724,16 @@ export function IdeWorkspace() {
               {workflowNodes.map((n, i) => (
                 <div key={n.id} className="flex items-center gap-2">
                   {i > 0 && <span className="text-[var(--color-text-muted)]">→</span>}
-                  <div className="rounded-md border border-[var(--color-line)] bg-[var(--color-ink)] px-2 py-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (n.id.length > 20) {
+                        setSelectedTaskId(n.id);
+                        setCmdTab("inspect");
+                      }
+                    }}
+                    className="rounded-md border border-[var(--color-line)] bg-[var(--color-ink)] px-2 py-1 text-left"
+                  >
                     <p className="font-[var(--font-display)] text-[10px] uppercase text-[var(--color-text-muted)]">
                       {n.label.replace(/_/g, " ")}
                     </p>
@@ -719,39 +741,28 @@ export function IdeWorkspace() {
                       <Circle size={6} className={STATUS_DOT[n.status] ?? STATUS_DOT.idle} fill="currentColor" />
                       {n.status}
                     </p>
-                  </div>
+                  </button>
                 </div>
               ))}
             </div>
           )}
 
-          {bottomTab === "graph" && (
-            <div className="flex h-full flex-wrap content-center items-center justify-center gap-6">
-              {["User", "tRPC", "Agents", "MySQL", "Redis", "Worktrees", "Publish"].map((node) => (
-                <div
-                  key={node}
-                  className="flex h-14 w-14 items-center justify-center rounded-full border border-[var(--color-teal)]/40 bg-[var(--color-ink)] text-center font-[var(--font-display)] text-[9px] uppercase tracking-wide text-[var(--color-teal)]"
-                >
-                  {node}
-                </div>
-              ))}
-              <p className="basis-full text-center text-[10px] text-[var(--color-text-muted)]">
-                Schematic of this stack — not a live graph DB.
-              </p>
-            </div>
+          {bottomTab === "terminal" && <IdeTerminalPanel worktreeId={selectedWorktreeId} />}
+
+          {bottomTab === "patches" && <IdePatchReviewPanel worktreeId={selectedWorktreeId} />}
+
+          {bottomTab === "worktrees" && (
+            <IdeWorktreesPanel
+              selectedId={selectedWorktreeId}
+              onSelect={setSelectedWorktreeId}
+              onInspectTask={(id) => {
+                setSelectedTaskId(id);
+                setCmdTab("inspect");
+              }}
+            />
           )}
 
-          {bottomTab === "terminal" && (
-            <pre className="font-[var(--font-display)] text-[11px] leading-5 text-[var(--color-teal)]">
-              {`$ worker-agent-cloud ide\n`}
-              {`SSE: ${sseStatus} · running=${summary?.running ?? 0} awaiting=${summary?.awaitingApproval ?? 0} failed=${summary?.failed ?? 0}\n`}
-              {chatLog
-                .filter((m) => m.role === "system")
-                .slice(-12)
-                .map((m) => m.text)
-                .join("\n")}
-            </pre>
-          )}
+          {bottomTab === "preview" && <IdeBrowserPreview />}
 
           {bottomTab === "models" && <IdeModelsPanel />}
         </div>

@@ -4,8 +4,10 @@ import { httpBatchLink } from "@trpc/client";
 import superjson from "superjson";
 import { trpc } from "./lib/trpc";
 import { AppShell, type WorkspaceId } from "./components/AppShell";
+import { AuthGate } from "./components/AuthGate";
+import { OrgSessionBar } from "./components/OrgSessionBar";
 import { ScriptStudioWorkspace } from "./features/script-studio/ScriptStudioWorkspace";
-import { ClaimLedgerWorkspace } from "./features/claim-ledger/ClaimLedgerWorkspace";
+import { EvidenceArtifactsWorkspace } from "./features/evidence/EvidenceArtifactsWorkspace";
 import { GodMachineWorkspace } from "./features/god-machine/GodMachineWorkspace";
 import { IdeWorkspace } from "./features/idea-ide/IdeWorkspace";
 import { ContentOpsStudio } from "./features/youtube-automode/ContentOpsStudio";
@@ -14,18 +16,20 @@ import { OverviewWorkspace } from "./features/overview/OverviewWorkspace";
 import { LearnWorkspace } from "./features/learn/LearnWorkspace";
 import { PluginsWorkspace } from "./features/plugins/PluginsWorkspace";
 import { AutomationsPipelineWorkspace } from "./features/automations/AutomationsPipelineWorkspace";
+import { AgentsWorkspace } from "./features/agents/AgentsWorkspace";
+import { ToolsGatewayWorkspace } from "./features/tools/ToolsGatewayWorkspace";
 import { TemplateLibraryWorkspace } from "./features/templates/TemplateLibraryWorkspace";
 import { SocialManagerWorkspace } from "./features/social/SocialManagerWorkspace";
 import { ActivityWorkspace, InboxWorkspace } from "./features/activity/ActivityWorkspace";
 import {
   CalendarWorkspace,
   SettingsWorkspace,
-  GovernanceWorkspace,
 } from "./features/ops/OpsWorkspaces";
+import { GovernanceWorkspace } from "./features/ops/GovernanceWorkspace";
+import { RecoveryWorkspace } from "./features/ops/RecoveryWorkspace";
 import { ContentOpsWorkspace, BloggingStudioWorkspace } from "./features/content/ContentOpsWorkspace";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000/trpc";
-const LOCAL_USER_ID = "local-dev-user";
 
 function renderWorkspace(active: WorkspaceId) {
   switch (active) {
@@ -35,8 +39,9 @@ function renderWorkspace(active: WorkspaceId) {
     case "blogging":
       return <BloggingStudioWorkspace />;
     case "claim-ledger":
+      return <EvidenceArtifactsWorkspace mode="ledger" />;
     case "evidence":
-      return <ClaimLedgerWorkspace />;
+      return <EvidenceArtifactsWorkspace mode="evidence" />;
     case "god-machine":
       return <GodMachineWorkspace />;
     case "idea-ide":
@@ -49,6 +54,10 @@ function renderWorkspace(active: WorkspaceId) {
       return <LearnWorkspace />;
     case "automations":
       return <AutomationsPipelineWorkspace variant="automations" />;
+    case "agents":
+      return <AgentsWorkspace />;
+    case "tools-mcp":
+      return <ToolsGatewayWorkspace />;
     case "research-to-post":
       return <AutomationsPipelineWorkspace variant="research-to-post" />;
     case "youtube-automode":
@@ -59,7 +68,7 @@ function renderWorkspace(active: WorkspaceId) {
     case "research":
       return <ContentOpsStudio focus="research" />;
     case "approvals":
-      return <ContentOpsStudio focus="approvals" />;
+      return <GovernanceWorkspace initialTab="approvals" />;
     case "publishing":
       return <ContentOpsStudio focus="publishing" />;
     case "social-manager":
@@ -72,6 +81,8 @@ function renderWorkspace(active: WorkspaceId) {
       return <PluginsWorkspace mode="credentials" />;
     case "activity":
       return <ActivityWorkspace />;
+    case "recovery":
+      return <RecoveryWorkspace />;
     case "inbox":
       return <InboxWorkspace />;
     case "calendar":
@@ -79,7 +90,7 @@ function renderWorkspace(active: WorkspaceId) {
     case "settings":
       return <SettingsWorkspace />;
     case "governance":
-      return <GovernanceWorkspace />;
+      return <GovernanceWorkspace initialTab="policy" />;
     default:
       return <OverviewWorkspace />;
   }
@@ -93,8 +104,11 @@ export default function App() {
       links: [
         httpBatchLink({
           url: API_URL,
-          headers() {
-            return { "x-user-id": LOCAL_USER_ID };
+          fetch(url, options) {
+            return fetch(url, {
+              ...options,
+              credentials: "include",
+            });
           },
         }),
       ],
@@ -104,7 +118,14 @@ export default function App() {
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <AppShell>{(active) => renderWorkspace(active)}</AppShell>
+        <AuthGate>
+          <div className="flex h-screen min-h-0 flex-col">
+            <OrgSessionBar />
+            <div className="min-h-0 flex-1">
+              <AppShell>{(active) => renderWorkspace(active)}</AppShell>
+            </div>
+          </div>
+        </AuthGate>
       </QueryClientProvider>
     </trpc.Provider>
   );

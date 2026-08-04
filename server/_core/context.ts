@@ -1,41 +1,125 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "./db";
-import { users } from "../../drizzle/schema";
+import { organizationMembers, organizations, roles, users } from "../../drizzle/schema";
+import { ORG_HEADER } from "./auth/permissions";
+import { loadPermissionsForRole } from "./auth/bootstrap";
+import { parseCookies, resolveSession } from "./auth/session";
+import { SESSION_COOKIE } from "./auth/permissions";
+
+export type AuthContext = {
+  db: typeof db;
+  req: CreateExpressContextOptions["req"];
+  res: CreateExpressContextOptions["res"];
+  userId: string | null;
+  userEmail: string | null;
+  userDisplayName: string | null;
+  organizationId: string | null;
+  organizationName: string | null;
+  roleSlug: string | null;
+  permissions: string[];
+  sessionId: string | null;
+};
 
 /**
- * Replace `resolveUserIdFromRequest` with your real auth (session cookie,
- * JWT, Clerk/Auth.js, etc). Left explicit here so it's obvious where to
- * wire it in rather than hiding it behind a library default.
- *
- * Until real auth lands, the client sends `x-user-id`. We still upsert a
- * real `users` row so FK constraints on scripts/campaigns succeed — this is
- * not a fake user record presented as an auth system; it's the minimal
- * stand-in documented in schema.ts ("replace with your real auth").
+ * Resolves identity from a real httpOnly session cookie only.
+ * Never trusts a raw `x-user-id` header — that stand-in is removed.
+ * Optional `x-organization-id` switches active org when the user is a member.
  */
-function resolveUserIdFromRequest(req: CreateExpressContextOptions["req"]): string | null {
-  const header = req.headers["x-user-id"];
-  return typeof header === "string" && header.trim().length > 0 ? header.trim() : null;
-}
+export async function createContext({ req, res }: CreateExpressContextOptions): Promise<AuthContext> {
+  const cookies = parseCookies(req.headers.cookie);
+  const token = cookies[SESSION_COOKIE];
 
-async function ensureUserRow(userId: string): Promise<void> {
-  const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.id, userId)).limit(1);
-  if (existing) return;
-  await db.insert(users).values({
-    id: userId,
-    email: `${userId}@local.dev`,
-  });
-}
-
-export async function createContext({ req }: CreateExpressContextOptions) {
-  const userId = resolveUserIdFromRequest(req);
-  if (userId) {
-    await ensureUserRow(userId);
-  }
-  return {
+  const base: AuthContext = {
     db,
-    userId,
+    req,
+    res,
+    userId: null,
+    userEmail: null,
+    userDisplayName: null,
+    organizationId: null,
+    organizationName: null,
+    roleSlug: null,
+    permissions: [],
+    sessionId: null,
+  };
+
+  if (!token) return base;
+
+  const session = await resolveSession(token);
+  if (!session) return base;
+
+  const [user] = await db.select().from(users).where(eq(users.id, session.userId)).limit(1);
+  if (!user) return base;
+
+  const headerOrg = req.headers[ORG_HEADER];
+  const requestedOrgId =
+    typeof headerOrg === "string" && headerOrg.trim().length > 0 ? headerOrg.trim() : session.organizationId;
+
+  const [membership] = await db
+    .select({
+      organizationId: organizationMembers.organizationId,
+      roleId: organizationMembers.roleId,
+      roleSlug: roles.slug,
+      organizationName: organizations.name,
+    })
+    .from(organizationMembers)
+    .innerJoin(roles, eq(organizationMembers.roleId, roles.id))
+    .innerJoin(organizations, eq(organizationMembers.organizationId, organizations.id))
+    .where(
+      and(
+        eq(organizationMembers.userId, user.id),
+        eq(organizationMembers.organizationId, requestedOrgId),
+      ),
+    )
+    .limit(1);
+
+  // Fall back to session org if requested org is not a membership.
+  let active = membership;
+  if (!active && requestedOrgId !== session.organizationId) {
+    const [fallback] = await db
+      .select({
+        organizationId: organizationMembers.organizationId,
+        roleId: organizationMembers.roleId,
+        roleSlug: roles.slug,
+        organizationName: organizations.name,
+      })
+      .from(organizationMembers)
+      .innerJoin(roles, eq(organizationMembers.roleId, roles.id))
+      .innerJoin(organizations, eq(organizationMembers.organizationId, organizations.id))
+      .where(
+        and(
+          eq(organizationMembers.userId, user.id),
+          eq(organizationMembers.organizationId, session.organizationId),
+        ),
+      )
+      .limit(1);
+    active = fallback;
+  }
+
+  if (!active) {
+    return {
+      ...base,
+      userId: user.id,
+      userEmail: user.email,
+      userDisplayName: user.displayName,
+      sessionId: session.sessionId,
+    };
+  }
+
+  const perms = await loadPermissionsForRole(active.roleId);
+
+  return {
+    ...base,
+    userId: user.id,
+    userEmail: user.email,
+    userDisplayName: user.displayName,
+    organizationId: active.organizationId,
+    organizationName: active.organizationName,
+    roleSlug: active.roleSlug,
+    permissions: perms,
+    sessionId: session.sessionId,
   };
 }
 
-export type Context = Awaited<ReturnType<typeof createContext>>;
+export type Context = AuthContext;

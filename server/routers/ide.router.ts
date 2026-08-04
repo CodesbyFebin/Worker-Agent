@@ -1,8 +1,9 @@
-import { desc, eq, inArray, sql } from "drizzle-orm";
+import { desc, eq, inArray, sql, and } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { protectedProcedure, router } from "../_core/trpc";
+import { protectedProcedure, permissionProcedure, router } from "../_core/trpc";
 import { agentEvents, agentTasks, agentWorktrees, agentRoleEnum } from "../../drizzle/schema";
+import { writeAuditLog } from "../_core/auth/audit";
 
 function taskToDTO(row: typeof agentTasks.$inferSelect) {
   return {
@@ -27,6 +28,7 @@ export const ideRouter = router({
     const recent = await ctx.db
       .select()
       .from(agentTasks)
+      .where(eq(agentTasks.organizationId, ctx.organizationId))
       .orderBy(desc(agentTasks.updatedAt))
       .limit(500);
 
@@ -91,23 +93,39 @@ export const ideRouter = router({
         ? await ctx.db
             .select()
             .from(agentTasks)
-            .where(inArray(agentTasks.status, input.statuses))
+            .where(
+              and(
+                eq(agentTasks.organizationId, ctx.organizationId),
+                inArray(agentTasks.status, input.statuses),
+              ),
+            )
             .orderBy(desc(agentTasks.updatedAt))
             .limit(limit)
-        : await ctx.db.select().from(agentTasks).orderBy(desc(agentTasks.updatedAt)).limit(limit);
+        : await ctx.db
+            .select()
+            .from(agentTasks)
+            .where(eq(agentTasks.organizationId, ctx.organizationId))
+            .orderBy(desc(agentTasks.updatedAt))
+            .limit(limit);
       return rows.map(taskToDTO);
     }),
 
   getTask: protectedProcedure
     .input(z.object({ taskId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const [task] = await ctx.db.select().from(agentTasks).where(eq(agentTasks.id, input.taskId)).limit(1);
+      const [task] = await ctx.db
+        .select()
+        .from(agentTasks)
+        .where(and(eq(agentTasks.id, input.taskId), eq(agentTasks.organizationId, ctx.organizationId)))
+        .limit(1);
       if (!task) throw new TRPCError({ code: "NOT_FOUND", message: "Task not found" });
 
       const events = await ctx.db
         .select()
         .from(agentEvents)
-        .where(eq(agentEvents.taskId, input.taskId))
+        .where(
+          and(eq(agentEvents.taskId, input.taskId), eq(agentEvents.organizationId, ctx.organizationId)),
+        )
         .orderBy(desc(agentEvents.createdAt))
         .limit(100);
 
@@ -166,7 +184,8 @@ export const ideRouter = router({
         awaiting: sql<number>`sum(case when ${agentTasks.status} = 'awaiting_approval' then 1 else 0 end)`,
         running: sql<number>`sum(case when ${agentTasks.status} in ('running','assigned') then 1 else 0 end)`,
       })
-      .from(agentTasks);
+      .from(agentTasks)
+      .where(eq(agentTasks.organizationId, ctx.organizationId));
 
     const row = rows[0];
     return {
@@ -184,13 +203,15 @@ export const ideRouter = router({
     const rows = await ctx.db
       .select()
       .from(agentTasks)
-      .where(eq(agentTasks.status, "awaiting_approval"))
+      .where(
+        and(eq(agentTasks.status, "awaiting_approval"), eq(agentTasks.organizationId, ctx.organizationId)),
+      )
       .orderBy(desc(agentTasks.updatedAt))
       .limit(50);
     return rows.map(taskToDTO);
   }),
 
-  /** Global activity feed from agent_events — powers Activity / Inbox. */
+  /** Org-scoped activity feed from agent_events. */
   listRecentEvents: protectedProcedure
     .input(z.object({ limit: z.number().int().min(1).max(100).default(40) }).optional())
     .query(async ({ ctx, input }) => {
@@ -198,6 +219,7 @@ export const ideRouter = router({
       const rows = await ctx.db
         .select()
         .from(agentEvents)
+        .where(eq(agentEvents.organizationId, ctx.organizationId))
         .orderBy(desc(agentEvents.createdAt))
         .limit(limit);
       return rows.map((r) => ({
@@ -245,5 +267,110 @@ export const ideRouter = router({
     .query(async ({ input }) => {
       const { readRepoFile } = await import("../services/ide/repoFs");
       return readRepoFile(input.path);
+    }),
+
+  writeFile: permissionProcedure("script:write")
+    .input(z.object({ path: z.string().min(1).max(512), content: z.string().max(400_000) }))
+    .mutation(async ({ ctx, input }) => {
+      const { writeRepoFile } = await import("../services/ide/repoFs");
+      const result = await writeRepoFile(input.path, input.content);
+      await writeAuditLog({
+        organizationId: ctx.organizationId,
+        actorUserId: ctx.userId,
+        action: "ide.write_file",
+        resourceType: "file",
+        resourceId: input.path.slice(0, 64),
+        payload: { path: input.path, size: result.size },
+      });
+      return result;
+    }),
+
+  repoStatus: protectedProcedure.query(async () => {
+    const { getRepoStatus } = await import("../services/ide/gitOps");
+    return getRepoStatus();
+  }),
+
+  getDiff: protectedProcedure
+    .input(
+      z
+        .object({
+          staged: z.boolean().optional(),
+          path: z.string().max(512).optional(),
+          worktreeId: z.string().uuid().optional(),
+        })
+        .optional(),
+    )
+    .query(async ({ input }) => {
+      const { getRepoDiff } = await import("../services/ide/gitOps");
+      return getRepoDiff(input ?? {});
+    }),
+
+  listWorktrees: protectedProcedure.query(async ({ ctx }) => {
+    const { listActiveWorktrees } = await import("../services/ide/gitOps");
+    return listActiveWorktrees(ctx.organizationId);
+  }),
+
+  removeWorktree: permissionProcedure("script:write")
+    .input(z.object({ worktreeId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const { removeWorktree } = await import("../_core/worktree-manager");
+      await removeWorktree(input.worktreeId);
+      await writeAuditLog({
+        organizationId: ctx.organizationId,
+        actorUserId: ctx.userId,
+        action: "ide.remove_worktree",
+        resourceType: "worktree",
+        resourceId: input.worktreeId,
+      });
+      return { ok: true as const };
+    }),
+
+  listCommands: protectedProcedure.query(async () => {
+    const { listAllowedCommands } = await import("../services/ide/gitOps");
+    return listAllowedCommands();
+  }),
+
+  runCommand: permissionProcedure("script:write")
+    .input(
+      z.object({
+        commandId: z.string().min(1).max(64),
+        worktreeId: z.string().uuid().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { runAllowedCommand } = await import("../services/ide/gitOps");
+      const result = await runAllowedCommand(input);
+      await writeAuditLog({
+        organizationId: ctx.organizationId,
+        actorUserId: ctx.userId,
+        action: "ide.run_command",
+        resourceType: "command",
+        resourceId: input.commandId,
+        payload: { exitCode: result.exitCode, durationMs: result.durationMs, cwd: result.cwd },
+      });
+      return result;
+    }),
+
+  preparePr: permissionProcedure("agent:dispatch")
+    .input(
+      z.object({
+        title: z.string().min(1).max(256),
+        body: z.string().max(20_000).optional(),
+        worktreeId: z.string().uuid().optional(),
+        open: z.boolean().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { preparePullRequest } = await import("../services/ide/gitOps");
+      const result = await preparePullRequest(input);
+      await writeAuditLog({
+        organizationId: ctx.organizationId,
+        actorUserId: ctx.userId,
+        action: "ide.prepare_pr",
+        resourceType: "pull_request",
+        resourceId: result.branch ?? "unknown",
+        payload: { opened: result.opened, prUrl: result.prUrl, reason: result.reason },
+      });
+      return result;
     }),
 });

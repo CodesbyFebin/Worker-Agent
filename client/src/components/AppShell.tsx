@@ -3,6 +3,8 @@ import {
   LayoutGrid,
   Folder,
   Zap,
+  Bot,
+  Wrench,
   Play,
   Smartphone,
   Search,
@@ -26,6 +28,7 @@ import {
   PenLine,
   GitBranch,
   KeyRound,
+  RefreshCw,
 } from "lucide-react";
 import { WorkerAgentLogo } from "./WorkerAgentLogo";
 import { AgentRail } from "./AgentRail";
@@ -41,6 +44,8 @@ export type WorkspaceId =
   | "overview"
   | "workspace"
   | "automations"
+  | "agents"
+  | "tools-mcp"
   | "research-to-post"
   | "youtube"
   | "shorts-reels"
@@ -55,6 +60,7 @@ export type WorkspaceId =
   | "plugins"
   | "credentials"
   | "activity"
+  | "recovery"
   | "calendar"
   | "inbox"
   | "learn"
@@ -75,6 +81,8 @@ const CONTENT_OPS: NavItem[] = [
   { id: "overview", label: "Overview", icon: LayoutGrid },
   { id: "workspace", label: "Workspace", icon: Folder },
   { id: "automations", label: "Automations", icon: Zap },
+  { id: "agents", label: "Agents", icon: Bot },
+  { id: "tools-mcp", label: "Tools & MCP", icon: Wrench },
   { id: "research-to-post", label: "Research-to-Post", icon: GitBranch },
   { id: "youtube", label: "Autopilot", icon: Play },
   { id: "shorts-reels", label: "Shorts & Reels", icon: Smartphone },
@@ -91,6 +99,7 @@ const CONTENT_OPS: NavItem[] = [
   { id: "calendar", label: "Calendar", icon: Calendar },
   { id: "inbox", label: "Inbox", icon: Inbox },
   { id: "activity", label: "Activity", icon: Activity },
+  { id: "recovery", label: "Recovery", icon: RefreshCw },
   { id: "governance", label: "Governance", icon: ShieldCheck },
   { id: "learn", label: "Learn", icon: BookOpen },
   { id: "settings", label: "Settings", icon: Settings },
@@ -108,6 +117,8 @@ const FULL_BLEED: WorkspaceId[] = [
   "publishing",
   "overview",
   "automations",
+  "agents",
+  "tools-mcp",
   "research-to-post",
   "social-manager",
   "plugins",
@@ -118,6 +129,7 @@ const FULL_BLEED: WorkspaceId[] = [
   "calendar",
   "inbox",
   "activity",
+  "recovery",
   "governance",
   "settings",
 ];

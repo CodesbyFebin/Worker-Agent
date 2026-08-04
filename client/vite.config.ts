@@ -22,6 +22,7 @@ export default defineConfig({
       "/trpc": "http://localhost:4000",
       "/events": "http://localhost:4000",
       "/health": "http://localhost:4000",
+      "/ready": "http://localhost:4000",
     },
   },
 });

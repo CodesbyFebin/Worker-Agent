@@ -32,7 +32,7 @@ export const scriptRouter = router({
     const rows = await ctx.db
       .select()
       .from(scripts)
-      .where(eq(scripts.userId, ctx.userId!))
+      .where(eq(scripts.organizationId, ctx.organizationId))
       .orderBy(desc(scripts.updatedAt));
 
     return rows.map((row) => ({
@@ -50,7 +50,7 @@ export const scriptRouter = router({
       const [script] = await ctx.db
         .select()
         .from(scripts)
-        .where(and(eq(scripts.id, input.scriptId), eq(scripts.userId, ctx.userId!)))
+        .where(and(eq(scripts.id, input.scriptId), eq(scripts.organizationId, ctx.organizationId)))
         .limit(1);
 
       if (!script) {
@@ -111,7 +111,8 @@ export const scriptRouter = router({
 
       await ctx.db.insert(scripts).values({
         id,
-        userId: ctx.userId!,
+        organizationId: ctx.organizationId,
+        userId: ctx.userId,
         title: input.title,
         fullText,
         targetDurationSeconds: input.targetDurationSeconds,
@@ -163,7 +164,7 @@ export const scriptRouter = router({
       const [script] = await ctx.db
         .select()
         .from(scripts)
-        .where(and(eq(scripts.id, section.scriptId), eq(scripts.userId, ctx.userId!)))
+        .where(and(eq(scripts.id, section.scriptId), eq(scripts.organizationId, ctx.organizationId)))
         .limit(1);
 
       if (!script) {
@@ -219,7 +220,7 @@ export const scriptRouter = router({
       const [script] = await ctx.db
         .select()
         .from(scripts)
-        .where(and(eq(scripts.id, section.scriptId), eq(scripts.userId, ctx.userId!)))
+        .where(and(eq(scripts.id, section.scriptId), eq(scripts.organizationId, ctx.organizationId)))
         .limit(1);
 
       if (!script) {
@@ -271,7 +272,7 @@ export const scriptRouter = router({
       const [script] = await ctx.db
         .select()
         .from(scripts)
-        .where(and(eq(scripts.id, input.scriptId), eq(scripts.userId, ctx.userId!)))
+        .where(and(eq(scripts.id, input.scriptId), eq(scripts.organizationId, ctx.organizationId)))
         .limit(1);
 
       if (!script) {

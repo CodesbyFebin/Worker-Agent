@@ -1,0 +1,77 @@
+/** Canonical permission keys. Seeded into `permissions` on bootstrap. */
+export const PERMISSIONS = [
+  "org:read",
+  "org:manage",
+  "org:members",
+  "script:read",
+  "script:write",
+  "campaign:read",
+  "campaign:write",
+  "agent:read",
+  "agent:dispatch",
+  "ledger:read",
+  "ledger:write",
+  "pipeline:read",
+  "pipeline:write",
+  "workflow:read",
+  "workflow:write",
+  "agent:write",
+  "tool:invoke",
+  "tool:manage",
+  "mcp:manage",
+  "approval:read",
+  "approval:decide",
+  "governance:write",
+  "artifact:read",
+  "artifact:write",
+  "ops:recover",
+  "settings:read",
+  "settings:write",
+  "audit:read",
+] as const;
+
+export type PermissionKey = (typeof PERMISSIONS)[number];
+
+export const ROLE_PERMISSION_MAP: Record<"owner" | "admin" | "member" | "viewer", PermissionKey[]> = {
+  owner: [...PERMISSIONS],
+  admin: PERMISSIONS.filter((p) => p !== "org:manage"),
+  member: [
+    "org:read",
+    "script:read",
+    "script:write",
+    "campaign:read",
+    "campaign:write",
+    "agent:read",
+    "agent:dispatch",
+    "ledger:read",
+    "ledger:write",
+    "pipeline:read",
+    "pipeline:write",
+    "workflow:read",
+    "workflow:write",
+    "agent:write",
+    "tool:invoke",
+    "tool:manage",
+    "approval:read",
+    "approval:decide",
+    "artifact:read",
+    "artifact:write",
+    "settings:read",
+  ],
+  viewer: [
+    "org:read",
+    "script:read",
+    "campaign:read",
+    "agent:read",
+    "ledger:read",
+    "pipeline:read",
+    "workflow:read",
+    "approval:read",
+    "artifact:read",
+    "settings:read",
+  ],
+};
+
+export const SESSION_COOKIE = "wa_session";
+export const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+export const ORG_HEADER = "x-organization-id";

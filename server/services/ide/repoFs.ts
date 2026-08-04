@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import { readFileSync, existsSync } from "fs";
 import path from "path";
 import { TRPCError } from "@trpc/server";
+import { assertSafeRelativePath } from "../../_core/sandbox";
 
 const SKIP = new Set([
   "node_modules",
@@ -48,6 +49,14 @@ export function repoRoot(): string {
 function resolveSafe(rel: string): string {
   const root = repoRoot();
   const cleaned = rel.replace(/\\/g, "/").replace(/^\/+/, "");
+  try {
+    if (cleaned) assertSafeRelativePath(cleaned);
+  } catch (err) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: err instanceof Error ? err.message : "Sandbox path rejected",
+    });
+  }
   const abs = path.resolve(root, cleaned);
   const relToRoot = path.relative(root, abs);
   if (relToRoot.startsWith("..") || path.isAbsolute(relToRoot)) {
@@ -123,3 +132,30 @@ export async function readRepoFile(relPath: string): Promise<{
     size: stat.size,
   };
 }
+
+/** Write UTF-8 text into a file under the repo root (path-traversal safe). */
+export async function writeRepoFile(
+  relPath: string,
+  content: string,
+): Promise<{ path: string; size: number }> {
+  if (content.length > MAX_BYTES * 2) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: `Content too large (${content.length} chars)`,
+    });
+  }
+  const abs = resolveSafe(relPath);
+  const root = repoRoot();
+  // Disallow writing into skipped system dirs
+  const first = relPath.replace(/\\/g, "/").split("/").filter(Boolean)[0];
+  if (first && SKIP.has(first)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: `Cannot write under ${first}/` });
+  }
+  await fs.mkdir(path.dirname(abs), { recursive: true });
+  await fs.writeFile(abs, content, "utf8");
+  const stat = await fs.stat(abs);
+  return { path: path.relative(root, abs).replace(/\\/g, "/"), size: stat.size };
+}
+
+export { resolveSafe };
+

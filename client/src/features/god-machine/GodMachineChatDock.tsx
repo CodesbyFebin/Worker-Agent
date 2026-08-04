@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { ArrowUp, Check, Code2, Loader2, MessageSquare, Sparkles, X } from "lucide-react";
 import { trpc } from "../../lib/trpc";
 import { ModelChooser } from "../../components/ModelChooser";

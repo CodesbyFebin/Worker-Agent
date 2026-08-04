@@ -64,7 +64,7 @@ export function ContentPipelineBar() {
       </p>
       <button
         type="button"
-        disabled={advance.isPending || active.stage === "done"}
+        disabled={advance.isPending}
         onClick={() => advance.mutate({ pipelineId: active.id })}
         className="rounded-lg bg-[var(--color-violet)] px-3 py-1 text-[11px] font-semibold text-white disabled:opacity-40"
       >

@@ -5,11 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --env-file=../.env _core/index.ts",
+    "dev:api": "tsx watch --env-file=../.env _core/index.ts",
+    "dev:worker": "tsx watch --env-file=../.env _core/worker.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node --env-file=../.env dist/_core/index.js"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "start": "node --env-file=../.env dist/server/_core/index.js",
+    "start:api": "node --env-file=../.env dist/server/_core/index.js",
+    "start:worker": "node --env-file=../.env dist/server/_core/worker.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.3",
+    "@aws-sdk/client-s3": "^3.1103.0",
     "@octokit/rest": "^21.0.2",
     "@trpc/server": "^10.45.2",
     "bullmq": "^5.12.0",

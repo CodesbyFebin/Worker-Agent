@@ -28,6 +28,7 @@ export async function orchestrateGoal(params: {
   goal: string;
   scriptId?: string;
   userId?: string;
+  organizationId: string;
 }): Promise<{
   rootTaskId: string;
   scriptId?: string;
@@ -40,6 +41,7 @@ export async function orchestrateGoal(params: {
   if (params.userId && pipelineMod.looksLikeScriptGoal(params.goal) && !scriptId) {
     const started = await pipelineMod.startContentPipeline({
       userId: params.userId,
+      organizationId: params.organizationId,
       title: `Script: ${params.goal}`.slice(0, 255),
       goal: params.goal,
     });
@@ -47,7 +49,11 @@ export async function orchestrateGoal(params: {
     pipelineId = started.pipelineId;
   }
 
-  const { rootTaskId, subtaskIds } = await planGoal({ goal: params.goal, scriptId });
+  const { rootTaskId, subtaskIds } = await planGoal({
+    goal: params.goal,
+    scriptId,
+    organizationId: params.organizationId,
+  });
   if (pipelineId) {
     await pipelineMod.linkPipelineRootTask(pipelineId, rootTaskId);
   }
@@ -63,7 +69,7 @@ async function blockRemaining(rootTaskId: string, fromIndex: number, subtaskIds:
 
 /**
  * Registers the worker that actually drives the chain forward. Call this
- * once at server boot (see _core/index.ts).
+ * once from the worker process (`server/_core/worker.ts`), not from the API.
  */
 export function registerGodMachineWorker() {
   return registerWorker<ChainJobData>(

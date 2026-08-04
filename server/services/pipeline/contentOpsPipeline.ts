@@ -92,6 +92,7 @@ export function draftToSections(draft: string): Array<{
 
 export async function createScriptWithSections(params: {
   userId: string;
+  organizationId: string;
   title: string;
   draft?: string;
   targetDurationSeconds?: number;
@@ -109,6 +110,7 @@ export async function createScriptWithSections(params: {
 
   await db.insert(scripts).values({
     id,
+    organizationId: params.organizationId,
     userId: params.userId,
     title: params.title.slice(0, 255),
     fullText,
@@ -158,6 +160,7 @@ export async function applyDraftToScript(scriptId: string, draft: string): Promi
 
 export async function startContentPipeline(params: {
   userId: string;
+  organizationId: string;
   title: string;
   goal: string;
   rootTaskId?: string;
@@ -165,6 +168,7 @@ export async function startContentPipeline(params: {
 }): Promise<{ pipelineId: string; scriptId: string }> {
   const { scriptId } = await createScriptWithSections({
     userId: params.userId,
+    organizationId: params.organizationId,
     title: params.title,
     draft: params.draft,
   });
@@ -173,6 +177,7 @@ export async function startContentPipeline(params: {
   const now = new Date();
   await db.insert(contentOpsPipelines).values({
     id: pipelineId,
+    organizationId: params.organizationId,
     userId: params.userId,
     scriptId,
     rootTaskId: params.rootTaskId ?? null,
@@ -264,11 +269,18 @@ export function nextStage(current: PipelineStage): PipelineStage | null {
 export async function advancePipeline(params: {
   pipelineId: string;
   userId: string;
+  organizationId: string;
 }): Promise<{ stage: PipelineStage; workspaceId: string | null; scriptId: string }> {
   const [pipe] = await db
     .select()
     .from(contentOpsPipelines)
-    .where(and(eq(contentOpsPipelines.id, params.pipelineId), eq(contentOpsPipelines.userId, params.userId)))
+    .where(
+      and(
+        eq(contentOpsPipelines.id, params.pipelineId),
+        eq(contentOpsPipelines.organizationId, params.organizationId),
+        eq(contentOpsPipelines.userId, params.userId),
+      ),
+    )
     .limit(1);
 
   if (!pipe) throw new Error("Pipeline not found");

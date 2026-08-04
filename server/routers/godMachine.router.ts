@@ -1,4 +1,4 @@
-import { eq, isNull, inArray } from "drizzle-orm";
+import { and, eq, isNull, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "../_core/trpc";
@@ -67,7 +67,11 @@ export const godMachineRouter = router({
   dispatchGoal: protectedProcedure
     .input(z.object({ goal: z.string().min(1).max(2000), scriptId: z.string().uuid().optional() }))
     .mutation(async ({ ctx, input }) => {
-      return orchestrateGoal({ ...input, userId: ctx.userId! });
+      return orchestrateGoal({
+        ...input,
+        userId: ctx.userId,
+        organizationId: ctx.organizationId,
+      });
     }),
 
   /**
@@ -82,7 +86,7 @@ export const godMachineRouter = router({
       const [task] = await ctx.db
         .select()
         .from(agentTasks)
-        .where(eq(agentTasks.id, input.taskId))
+        .where(and(eq(agentTasks.id, input.taskId), eq(agentTasks.organizationId, ctx.organizationId)))
         .limit(1);
 
       if (!task) throw new TRPCError({ code: "NOT_FOUND", message: "Task not found" });
@@ -112,7 +116,12 @@ export const godMachineRouter = router({
       const children = await ctx.db
         .select()
         .from(agentTasks)
-        .where(eq(agentTasks.parentTaskId, input.rootTaskId));
+        .where(
+          and(
+            eq(agentTasks.parentTaskId, input.rootTaskId),
+            eq(agentTasks.organizationId, ctx.organizationId),
+          ),
+        );
 
       const runnable = children
         .slice()
@@ -157,13 +166,20 @@ export const godMachineRouter = router({
       const root = await ctx.db
         .select()
         .from(agentTasks)
-        .where(eq(agentTasks.id, input.rootTaskId))
+        .where(
+          and(eq(agentTasks.id, input.rootTaskId), eq(agentTasks.organizationId, ctx.organizationId)),
+        )
         .limit(1);
 
       const children = await ctx.db
         .select()
         .from(agentTasks)
-        .where(eq(agentTasks.parentTaskId, input.rootTaskId));
+        .where(
+          and(
+            eq(agentTasks.parentTaskId, input.rootTaskId),
+            eq(agentTasks.organizationId, ctx.organizationId),
+          ),
+        );
 
       if (!root[0]) throw new TRPCError({ code: "NOT_FOUND", message: "Root task not found" });
 

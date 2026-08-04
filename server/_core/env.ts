@@ -63,6 +63,18 @@ const envSchema = z
     REDIS_URL: z.string().default("redis://localhost:6379"),
 
     GOD_MACHINE_REPO_ROOT: z.string().optional(),
+
+    /** S3-compatible object storage (MinIO / AWS). Empty → local filesystem backend. */
+    S3_ENDPOINT: z.string().optional(),
+    S3_REGION: z.string().default("us-east-1"),
+    S3_ACCESS_KEY_ID: z.string().optional(),
+    S3_SECRET_ACCESS_KEY: z.string().optional(),
+    S3_BUCKET: z.string().default("worker-agent-artifacts"),
+    S3_FORCE_PATH_STYLE: z
+      .string()
+      .optional()
+      .transform((v) => v !== "false" && v !== "0"),
+    ARTIFACTS_LOCAL_DIR: z.string().optional(),
   })
   .superRefine((val, ctx) => {
     if (val.LLM_PROVIDER === "anthropic" && !val.ANTHROPIC_API_KEY) {

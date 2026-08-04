@@ -12,6 +12,7 @@ export function LearnWorkspace() {
         <Row title="Overview" body="Live counts from campaigns, agents, scripts, ledger, approval queue." />
         <Row title="Workspace / Blogging / Drafts" body="Scripts + claim extract/verify. Blogging wraps Script Studio." />
         <Row title="Automations / Research-to-Post" body="Visual pipeline over real campaign day stages + trust gates." />
+        <Row title="Agents" body="Versioned definitions, model/tool policies, executions, and evaluation suites." />
         <Row title="YouTube / Shorts & Reels" body="ContentOps studio: brief, preview, scenes, timeline, approve publish." />
         <Row title="Social Manager" body="Calendar from campaigns, publisher connector status, composer → claims." />
         <Row title="Templates" body="Few real workflows (campaign / God Machine / claim sweep) — not a fake 1000+ store." />

@@ -31,7 +31,8 @@ export const campaignRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       return startCampaign({
-        userId: ctx.userId!,
+        userId: ctx.userId,
+        organizationId: ctx.organizationId,
         topic: input.topic,
         totalDays: input.totalDays,
         startDate: input.startDate ? new Date(input.startDate) : new Date(),
@@ -42,7 +43,7 @@ export const campaignRouter = router({
     const campaigns = await ctx.db
       .select()
       .from(contentCampaigns)
-      .where(eq(contentCampaigns.userId, ctx.userId!))
+      .where(eq(contentCampaigns.organizationId, ctx.organizationId))
       .orderBy(desc(contentCampaigns.createdAt));
     return campaigns.map((c) => ({
       ...c,
@@ -57,7 +58,7 @@ export const campaignRouter = router({
       const [campaign] = await ctx.db
         .select()
         .from(contentCampaigns)
-        .where(and(eq(contentCampaigns.id, input.campaignId), eq(contentCampaigns.userId, ctx.userId!)))
+        .where(and(eq(contentCampaigns.id, input.campaignId), eq(contentCampaigns.organizationId, ctx.organizationId)))
         .limit(1);
       if (!campaign) throw new TRPCError({ code: "NOT_FOUND", message: "Campaign not found" });
       return {
@@ -79,7 +80,7 @@ export const campaignRouter = router({
       const [campaign] = await ctx.db
         .select()
         .from(contentCampaigns)
-        .where(and(eq(contentCampaigns.id, input.campaignId), eq(contentCampaigns.userId, ctx.userId!)))
+        .where(and(eq(contentCampaigns.id, input.campaignId), eq(contentCampaigns.organizationId, ctx.organizationId)))
         .limit(1);
       if (!campaign) throw new TRPCError({ code: "NOT_FOUND", message: "Campaign not found" });
       if (campaign.status === "completed") {

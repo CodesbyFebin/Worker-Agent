@@ -56,6 +56,7 @@ interface CampaignDayJobData {
 
 async function insertAndRunTask(params: {
   campaignId: string;
+  organizationId: string;
   dayIndex: number;
   dayRootTaskId: string;
   order: number;
@@ -67,6 +68,7 @@ async function insertAndRunTask(params: {
   const now = new Date();
   await db.insert(agentTasks).values({
     id,
+    organizationId: params.organizationId,
     parentTaskId: params.dayRootTaskId,
     campaignId: params.campaignId,
     dayIndex: params.dayIndex,
@@ -122,15 +124,17 @@ async function maybeCompleteCampaign(campaignId: string): Promise<void> {
  */
 export async function startCampaign(params: {
   userId: string;
+  organizationId: string;
   topic: string;
   totalDays: number;
   startDate: Date;
 }): Promise<{ campaignId: string }> {
-  const { userId, topic, totalDays, startDate } = params;
+  const { userId, organizationId, topic, totalDays, startDate } = params;
   const campaignId = randomUUID();
 
   await db.insert(contentCampaigns).values({
     id: campaignId,
+    organizationId,
     userId,
     topic,
     totalDays,
@@ -191,6 +195,7 @@ export function registerCampaignDayWorker() {
         const now = new Date();
         await db.insert(agentTasks).values({
           id: dayRootTaskId,
+          organizationId: campaign?.organizationId ?? null,
           parentTaskId: null,
           campaignId: data.campaignId,
           dayIndex: data.dayIndex,
@@ -204,7 +209,15 @@ export function registerCampaignDayWorker() {
         });
       }
 
-      const base = { campaignId: data.campaignId, dayIndex: data.dayIndex, dayRootTaskId };
+      const orgId = campaign?.organizationId;
+      if (!orgId) throw new Error(`Campaign ${data.campaignId} missing organizationId`);
+
+      const base = {
+        campaignId: data.campaignId,
+        organizationId: orgId,
+        dayIndex: data.dayIndex,
+        dayRootTaskId,
+      };
 
       switch (data.stage) {
         case "researcher": {
@@ -339,6 +352,7 @@ export function registerCampaignDayWorker() {
           const now = new Date();
           await db.insert(agentTasks).values({
             id,
+            organizationId: orgId,
             parentTaskId: dayRootTaskId,
             campaignId: data.campaignId,
             dayIndex: data.dayIndex,

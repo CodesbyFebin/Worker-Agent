@@ -74,11 +74,15 @@ function fallbackPlan(goal: string): PlannedSubtask[] {
 /**
  * Decomposes a goal into child tasks under a root planner task.
  */
-export async function planGoal(params: { goal: string; scriptId?: string }): Promise<{
+export async function planGoal(params: {
+  goal: string;
+  scriptId?: string;
+  organizationId: string;
+}): Promise<{
   rootTaskId: string;
   subtaskIds: string[];
 }> {
-  const { goal, scriptId } = params;
+  const { goal, scriptId, organizationId } = params;
 
   let subtasks: PlannedSubtask[] = [];
   try {
@@ -115,6 +119,7 @@ export async function planGoal(params: { goal: string; scriptId?: string }): Pro
 
   await db.insert(agentTasks).values({
     id: rootTaskId,
+    organizationId,
     parentTaskId: null,
     scriptId: scriptId ?? null,
     agentRole: "planner",
@@ -131,6 +136,7 @@ export async function planGoal(params: { goal: string; scriptId?: string }): Pro
     subtaskIds.push(id);
     await db.insert(agentTasks).values({
       id,
+      organizationId,
       parentTaskId: rootTaskId,
       scriptId: scriptId ?? null,
       agentRole: subtask.agentRole,

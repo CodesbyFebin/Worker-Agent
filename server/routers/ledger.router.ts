@@ -19,10 +19,19 @@ export const ledgerRouter = router({
   listByScript: protectedProcedure
     .input(z.object({ scriptId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
+      const [script] = await ctx.db
+        .select({ id: scripts.id })
+        .from(scripts)
+        .where(and(eq(scripts.id, input.scriptId), eq(scripts.organizationId, ctx.organizationId)))
+        .limit(1);
+      if (!script) throw new TRPCError({ code: "NOT_FOUND", message: "Script not found" });
+
       const rows = await ctx.db
         .select()
         .from(claimLedger)
-        .where(eq(claimLedger.scriptId, input.scriptId))
+        .where(
+          and(eq(claimLedger.scriptId, input.scriptId), eq(claimLedger.organizationId, ctx.organizationId)),
+        )
         .orderBy(desc(claimLedger.createdAt));
 
       return rows.map(mapClaim);
@@ -40,16 +49,6 @@ export const ledgerRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const base = ctx.db
-        .select({
-          claim: claimLedger,
-          scriptTitle: scripts.title,
-        })
-        .from(claimLedger)
-        .leftJoin(scripts, eq(claimLedger.scriptId, scripts.id))
-        .orderBy(desc(claimLedger.createdAt))
-        .limit(input.limit);
-
       const rows = input.scriptId
         ? await ctx.db
             .select({
@@ -58,10 +57,24 @@ export const ledgerRouter = router({
             })
             .from(claimLedger)
             .leftJoin(scripts, eq(claimLedger.scriptId, scripts.id))
-            .where(eq(claimLedger.scriptId, input.scriptId))
+            .where(
+              and(
+                eq(claimLedger.scriptId, input.scriptId),
+                eq(claimLedger.organizationId, ctx.organizationId),
+              ),
+            )
             .orderBy(desc(claimLedger.createdAt))
             .limit(input.limit)
-        : await base;
+        : await ctx.db
+            .select({
+              claim: claimLedger,
+              scriptTitle: scripts.title,
+            })
+            .from(claimLedger)
+            .leftJoin(scripts, eq(claimLedger.scriptId, scripts.id))
+            .where(eq(claimLedger.organizationId, ctx.organizationId))
+            .orderBy(desc(claimLedger.createdAt))
+            .limit(input.limit);
 
       return rows.map(({ claim, scriptTitle }) => ({
         ...mapClaim(claim),
@@ -78,8 +91,16 @@ export const ledgerRouter = router({
     .query(async ({ ctx, input }) => {
       const scriptId = input?.scriptId;
       const all = scriptId
-        ? await ctx.db.select().from(claimLedger).where(eq(claimLedger.scriptId, scriptId))
-        : await ctx.db.select().from(claimLedger);
+        ? await ctx.db
+            .select()
+            .from(claimLedger)
+            .where(
+              and(eq(claimLedger.scriptId, scriptId), eq(claimLedger.organizationId, ctx.organizationId)),
+            )
+        : await ctx.db
+            .select()
+            .from(claimLedger)
+            .where(eq(claimLedger.organizationId, ctx.organizationId));
 
       const byStatus = {
         pending: 0,
@@ -138,6 +159,7 @@ export const ledgerRouter = router({
 
       const rows = claims.map((claim) => ({
         id: randomUUID(),
+        organizationId: ctx.organizationId,
         scriptId: input.scriptId,
         devtag: `DT-${randomUUID().slice(0, 8)}`,
         claimText: claim.claimText,
@@ -158,7 +180,11 @@ export const ledgerRouter = router({
   verifyClaim: protectedProcedure
     .input(z.object({ claimId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const [claim] = await ctx.db.select().from(claimLedger).where(eq(claimLedger.id, input.claimId)).limit(1);
+      const [claim] = await ctx.db
+        .select()
+        .from(claimLedger)
+        .where(and(eq(claimLedger.id, input.claimId), eq(claimLedger.organizationId, ctx.organizationId)))
+        .limit(1);
       if (!claim) throw new TRPCError({ code: "NOT_FOUND", message: "Claim not found" });
 
       const result = await verifyClaim(claim.claimText);
@@ -172,7 +198,22 @@ export const ledgerRouter = router({
         })
         .where(eq(claimLedger.id, input.claimId));
 
-      return result;
+      let snapshotId: string | null = null;
+      try {
+        const { createEvidenceSnapshot } = await import("../services/artifacts/service");
+        const snap = await createEvidenceSnapshot({
+          organizationId: ctx.organizationId,
+          userId: ctx.userId,
+          claimId: claim.id,
+          verification: result,
+          storeArtifact: true,
+        });
+        snapshotId = snap.snapshotId;
+      } catch {
+        /* artifact tables may not be migrated yet */
+      }
+
+      return { ...result, snapshotId };
     }),
 
   setStatus: protectedProcedure
@@ -187,7 +228,7 @@ export const ledgerRouter = router({
       await ctx.db
         .update(claimLedger)
         .set({ verificationStatus: input.status, ...(input.sourceUrl ? { sourceUrl: input.sourceUrl } : {}) })
-        .where(eq(claimLedger.id, input.claimId));
+        .where(and(eq(claimLedger.id, input.claimId), eq(claimLedger.organizationId, ctx.organizationId)));
       return { ok: true };
     }),
 
@@ -204,17 +245,28 @@ export const ledgerRouter = router({
         ? await ctx.db
             .select()
             .from(claimLedger)
-            .where(and(eq(claimLedger.scriptId, input.scriptId), eq(claimLedger.verificationStatus, "pending")))
+            .where(
+              and(
+                eq(claimLedger.scriptId, input.scriptId),
+                eq(claimLedger.verificationStatus, "pending"),
+                eq(claimLedger.organizationId, ctx.organizationId),
+              ),
+            )
             .orderBy(desc(claimLedger.createdAt))
             .limit(input.limit)
         : await ctx.db
             .select()
             .from(claimLedger)
-            .where(eq(claimLedger.verificationStatus, "pending"))
+            .where(
+              and(
+                eq(claimLedger.verificationStatus, "pending"),
+                eq(claimLedger.organizationId, ctx.organizationId),
+              ),
+            )
             .orderBy(desc(claimLedger.createdAt))
             .limit(input.limit);
 
-      const results: Array<{ claimId: string; status: string }> = [];
+      const results: Array<{ claimId: string; status: string; snapshotId: string | null }> = [];
       for (const claim of pending) {
         const result = await verifyClaim(claim.claimText);
         await ctx.db
@@ -225,7 +277,21 @@ export const ledgerRouter = router({
             sourceUrl: result.topSourceUrl,
           })
           .where(eq(claimLedger.id, claim.id));
-        results.push({ claimId: claim.id, status: result.status });
+        let snapshotId: string | null = null;
+        try {
+          const { createEvidenceSnapshot } = await import("../services/artifacts/service");
+          const snap = await createEvidenceSnapshot({
+            organizationId: ctx.organizationId,
+            userId: ctx.userId,
+            claimId: claim.id,
+            verification: result,
+            storeArtifact: true,
+          });
+          snapshotId = snap.snapshotId;
+        } catch {
+          /* ignore */
+        }
+        results.push({ claimId: claim.id, status: result.status, snapshotId });
       }
       return { verified: results.length, results };
     }),

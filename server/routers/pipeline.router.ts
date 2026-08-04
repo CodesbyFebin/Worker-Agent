@@ -46,7 +46,7 @@ export const pipelineRouter = router({
     const rows = await ctx.db
       .select()
       .from(contentOpsPipelines)
-      .where(eq(contentOpsPipelines.userId, ctx.userId!))
+      .where(eq(contentOpsPipelines.organizationId, ctx.organizationId))
       .orderBy(desc(contentOpsPipelines.updatedAt));
     return rows.map(toDTO);
   }),
@@ -55,7 +55,7 @@ export const pipelineRouter = router({
     const [row] = await ctx.db
       .select()
       .from(contentOpsPipelines)
-      .where(eq(contentOpsPipelines.userId, ctx.userId!))
+      .where(eq(contentOpsPipelines.organizationId, ctx.organizationId))
       .orderBy(desc(contentOpsPipelines.updatedAt))
       .limit(1);
     return row ? toDTO(row) : null;
@@ -68,7 +68,7 @@ export const pipelineRouter = router({
         .select()
         .from(contentOpsPipelines)
         .where(
-          and(eq(contentOpsPipelines.id, input.pipelineId), eq(contentOpsPipelines.userId, ctx.userId!)),
+          and(eq(contentOpsPipelines.id, input.pipelineId), eq(contentOpsPipelines.organizationId, ctx.organizationId)),
         )
         .limit(1);
       if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Pipeline not found" });
@@ -82,7 +82,7 @@ export const pipelineRouter = router({
         .select()
         .from(contentOpsPipelines)
         .where(
-          and(eq(contentOpsPipelines.scriptId, input.scriptId), eq(contentOpsPipelines.userId, ctx.userId!)),
+          and(eq(contentOpsPipelines.scriptId, input.scriptId), eq(contentOpsPipelines.organizationId, ctx.organizationId)),
         )
         .orderBy(desc(contentOpsPipelines.updatedAt))
         .limit(1);
@@ -95,7 +95,8 @@ export const pipelineRouter = router({
     .mutation(async ({ ctx, input }) => {
       const result = await advancePipeline({
         pipelineId: input.pipelineId,
-        userId: ctx.userId!,
+        userId: ctx.userId,
+          organizationId: ctx.organizationId,
       });
 
       const [pipe] = await ctx.db
@@ -119,6 +120,7 @@ export const pipelineRouter = router({
             for (const c of claims.slice(0, 12)) {
               await ctx.db.insert(claimLedger).values({
                 id: randomUUID(),
+                organizationId: ctx.organizationId,
                 scriptId: script.id,
                 devtag: `pipe-${script.id.slice(0, 8)}-${randomUUID().slice(0, 8)}`,
                 claimText: c.claimText,
@@ -144,7 +146,8 @@ export const pipelineRouter = router({
         if (script) {
           try {
             const started = await startCampaign({
-              userId: ctx.userId!,
+              userId: ctx.userId,
+          organizationId: ctx.organizationId,
               topic: script.title,
               totalDays: 7,
               startDate: new Date(),
@@ -200,7 +203,8 @@ export const pipelineRouter = router({
         const now = new Date();
         await ctx.db.insert(contentOpsPipelines).values({
           id,
-          userId: ctx.userId!,
+          userId: ctx.userId,
+          organizationId: ctx.organizationId,
           scriptId: input.scriptId,
           rootTaskId: null,
           campaignId: null,
@@ -217,7 +221,8 @@ export const pipelineRouter = router({
         return toDTO(row!);
       }
       const started = await startContentPipeline({
-        userId: ctx.userId!,
+        userId: ctx.userId,
+          organizationId: ctx.organizationId,
         title: input.title,
         goal: input.title,
       });

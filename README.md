@@ -26,9 +26,22 @@ cp .env.example .env        # fill in DATABASE_URL, ANTHROPIC_API_KEY, etc.
 npm run local:infra         # Windows: start MariaDB + Redis 5 (port 6380)
 npm install                 # from repo root (workspaces)
 npm run db:push             # pushes the Drizzle schema to your MySQL instance
-npm run dev:server          # http://localhost:4000
-npm run dev:client          # http://localhost:5173
+npm run dev                 # API :4000 + worker + Vite :5173
+# or separately:
+# npm run dev:api
+# npm run dev:worker
+# npm run dev:web
 ```
+
+Baseline gate (must pass before feature work):
+
+```bash
+npm run typecheck && npm run lint && npm run test && npm run build
+```
+
+Health: `GET http://localhost:4000/health` (liveness), `GET http://localhost:4000/ready` (DB + Redis).
+
+See [docs/baseline.md](docs/baseline.md) and [docs/audits/current-state.md](docs/audits/current-state.md).
 
 You'll also need `ffmpeg`/`ffprobe` on PATH (for YouTube AutoMode's video
 assembly) and, if you're using the Coder Agent or GitHub-integrated

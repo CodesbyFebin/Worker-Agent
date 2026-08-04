@@ -68,7 +68,7 @@ export function TemplateLibraryWorkspace() {
     onError: (e) => setMsg(e.message),
   });
 
-  function useTemplate(id?: string) {
+  function applyTemplate(id?: string) {
     const t = TEMPLATES.find((x) => x.id === (id ?? selected)) ?? tpl;
     if (t.action === "campaign") start.mutate({ topic: topic.trim() || t.title, totalDays: t.days });
     else if (t.action === "god") dispatch.mutate({ goal: goal.trim() || t.title });
@@ -164,7 +164,7 @@ export function TemplateLibraryWorkspace() {
                       type="button"
                       onClick={() => {
                         setSelected(t.id);
-                        useTemplate(t.id);
+                        applyTemplate(t.id);
                       }}
                       className="rounded-lg bg-[var(--color-violet)] px-2 py-1 text-[11px] font-medium text-white"
                     >
@@ -216,7 +216,7 @@ export function TemplateLibraryWorkspace() {
             <button
               type="button"
               disabled={start.isPending || dispatch.isPending || verify.isPending}
-              onClick={() => useTemplate()}
+              onClick={() => applyTemplate()}
               className="mt-3 w-full rounded-xl bg-[var(--color-violet)] py-2.5 text-[13px] font-semibold text-white shadow-[var(--glow-magenta)]"
             >
               Use template

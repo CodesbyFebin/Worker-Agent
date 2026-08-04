@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Check, Clock, Play, Shield, User } from "lucide-react";
 import { trpc } from "../../lib/trpc";
 import { TopChrome } from "../../components/TopChrome";
+import { WorkflowsRuntimeWorkspace } from "./WorkflowsRuntimeWorkspace";
 
 type StepDef = {
   id: string;
@@ -24,8 +25,16 @@ const STEPS: StepDef[] = [
 
 /**
  * Research-to-Post / Automations canvas — steps mirror real campaign pipeline.
+ * Automations variant uses the durable workflow runtime (Phase 3).
  */
 export function AutomationsPipelineWorkspace({ variant = "research-to-post" }: { variant?: "research-to-post" | "automations" }) {
+  if (variant === "automations") {
+    return <WorkflowsRuntimeWorkspace />;
+  }
+  return <ResearchToPostCampaignWorkspace />;
+}
+
+function ResearchToPostCampaignWorkspace() {
   const utils = trpc.useUtils();
   const { data: campaigns } = trpc.campaign.list.useQuery();
   const [campaignId, setCampaignId] = useState<string | null>(null);
@@ -81,7 +90,7 @@ export function AutomationsPipelineWorkspace({ variant = "research-to-post" }: {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <TopChrome
-        title={variant === "automations" ? "Content Automation" : "Research-to-Post"}
+        title="Research-to-Post"
         status={day ? `Day ${day.day.dayIndex} · ${day.day.status}` : "Draft workflow"}
         statusTone="amber"
         actions={
@@ -123,7 +132,7 @@ export function AutomationsPipelineWorkspace({ variant = "research-to-post" }: {
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div>
               <h2 className="text-[15px] font-semibold">
-                {variant === "automations" ? "Content Automation" : "Research-to-Post Pipeline"}
+                Research-to-Post Pipeline
               </h2>
               <p className="text-[12px] text-[var(--color-text-muted)]">
                 Evidence-first, human-governed — steps map to real AutoMode / God Machine roles.
