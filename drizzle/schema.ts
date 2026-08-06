@@ -1330,3 +1330,246 @@ export const youtubeTrends = mysqlTable(
     fetchedIdx: index("youtube_trends_fetched_at_idx").on(table.fetchedAt),
   }),
 );
+
+/* -------------------------------------------------------------------------
+ * Phase 16.5+ — Knowledge Layer (vector, taxonomy, brand, winning patterns)
+ * ---------------------------------------------------------------------- */
+
+export const embeddingBackendEnum = ["local_sentence_transformers", "pinecone", "milvus", "openai"] as const;
+
+export const knowledgeEmbeddings = mysqlTable(
+  "knowledge_embeddings",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    organizationId: varchar("organization_id", { length: 36 })
+      .notNull()
+      .references(() => organizations.id),
+    /** artifact | script | trend | prompt | brand_guideline | winning_pattern */
+    entityType: varchar("entity_type", { length: 64 }).notNull(),
+    entityId: varchar("entity_id", { length: 36 }).notNull(),
+    /** JSON text stored for fast filtering without hitting source table */
+    metadata: text("metadata"),
+    /** JSON array of floats — replace with native vector when supported */
+    embeddingJson: text("embedding_json").notNull(),
+    model: varchar("model", { length: 128 }).notNull().default("all-MiniLM-L6-v2"),
+    backend: mysqlEnum("embedding_backend", embeddingBackendEnum).notNull().default("local_sentence_transformers"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    orgIdx: index("knowledge_embeddings_organization_id_idx").on(table.organizationId),
+    entityIdx: index("knowledge_embeddings_entity_idx").on(table.entityType, table.entityId),
+    backendIdx: index("knowledge_embeddings_backend_idx").on(table.backend),
+  }),
+);
+
+export const topicTaxonomies = mysqlTable(
+  "topic_taxonomies",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    organizationId: varchar("organization_id", { length: 36 })
+      .notNull()
+      .references(() => organizations.id),
+    name: varchar("name", { length: 255 }).notNull(),
+    slug: varchar("slug", { length: 255 }).notNull(),
+    description: text("description"),
+    parentId: varchar("parent_id", { length: 36 }),
+    properties: text("properties"),
+    createdBy: varchar("created_by", { length: 36 }).references(() => users.id),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    orgIdx: index("topic_taxonomies_organization_id_idx").on(table.organizationId),
+    slugIdx: index("topic_taxonomies_slug_idx").on(table.slug),
+    parentIdx: index("topic_taxonomies_parent_id_idx").on(table.parentId),
+  }),
+);
+
+export const brandGuidelines = mysqlTable(
+  "brand_guidelines",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    organizationId: varchar("organization_id", { length: 36 })
+      .notNull()
+      .references(() => organizations.id),
+    name: varchar("name", { length: 255 }).notNull(),
+    voice: text("voice"),
+    style: text("style"),
+    terminology: text("terminology"),
+    approvedClaims: text("approved_claims"),
+    disallowedClaims: text("disallowed_claims"),
+    logoUsage: text("logo_usage"),
+    colorPalette: text("color_palette"),
+    typography: text("typography"),
+    messaging: text("messaging"),
+    complianceRules: text("compliance_rules"),
+    createdBy: varchar("created_by", { length: 36 }).references(() => users.id),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    orgIdx: index("brand_guidelines_organization_id_idx").on(table.organizationId),
+  }),
+);
+
+export const winningPatterns = mysqlTable(
+  "winning_patterns",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    organizationId: varchar("organization_id", { length: 36 })
+      .notNull()
+      .references(() => organizations.id),
+    sourceVideoId: varchar("source_video_id", { length: 36 }).references(() => youtubeVideos.id, {
+      onDelete: "set null",
+    }),
+    sourceScriptId: varchar("source_script_id", { length: 36 }).references(() => scripts.id, {
+      onDelete: "set null",
+    }),
+    contentType: varchar("content_type", { length: 64 }).notNull(),
+    topicTags: text("topic_tags"),
+    /** Redacted JSON with winning attributes */
+    patternJson: text("pattern_json").notNull(),
+    performance: text("performance"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    orgIdx: index("winning_patterns_organization_id_idx").on(table.organizationId),
+    contentTypeIdx: index("winning_patterns_content_type_idx").on(table.contentType),
+    videoIdx: index("winning_patterns_source_video_id_idx").on(table.sourceVideoId),
+    scriptIdx: index("winning_patterns_source_script_id_idx").on(table.sourceScriptId),
+  }),
+);
+
+export const researchArchive = mysqlTable(
+  "research_archive",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    organizationId: varchar("organization_id", { length: 36 })
+      .notNull()
+      .references(() => organizations.id),
+    topic: varchar("topic", { length: 512 }).notNull(),
+    source: varchar("source", { length: 64 }).notNull(),
+    /** Redacted JSON payload */
+    payload: text("payload").notNull(),
+    confidenceScore: decimal("confidence_score", { precision: 4, scale: 3 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    orgIdx: index("research_archive_organization_id_idx").on(table.organizationId),
+    topicIdx: index("research_archive_topic_idx").on(table.topic),
+    sourceIdx: index("research_archive_source_idx").on(table.source),
+  }),
+);
+
+/* -------------------------------------------------------------------------
+ * Security Hardening — API keys, MFA, encrypted vault
+ * ---------------------------------------------------------------------- */
+
+export const apiKeys = mysqlTable(
+  "api_keys",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    userId: varchar("user_id", { length: 36 })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    organizationId: varchar("organization_id", { length: 36 })
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 255 }).notNull(),
+    prefix: varchar("prefix", { length: 64 }).notNull().unique(),
+    hash: varchar("hash", { length: 64 }).notNull(),
+    scopes: text("scopes").notNull(),
+    expiresAt: timestamp("expires_at"),
+    revokedAt: timestamp("revoked_at"),
+    lastUsedAt: timestamp("last_used_at"),
+    lastRotatedAt: timestamp("last_rotated_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index("api_keys_user_id_idx").on(table.userId),
+    orgIdx: index("api_keys_organization_id_idx").on(table.organizationId),
+    prefixIdx: index("api_keys_prefix_idx").on(table.prefix),
+    expiresIdx: index("api_keys_expires_at_idx").on(table.expiresAt),
+  }),
+);
+
+export const mfaFactors = mysqlTable(
+  "mfa_factors",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    userId: varchar("user_id", { length: 36 })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: mysqlEnum("mfa_type", ["totp", "webauthn", "sms"]).notNull(),
+    secret: varchar("secret", { length: 255 }).notNull(),
+    verified: boolean("verified").notNull().default(false),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdx: index("mfa_factors_user_id_idx").on(table.userId),
+    typeIdx: index("mfa_factors_type_idx").on(table.type),
+  }),
+);
+
+export const mfaBackupCodes = mysqlTable(
+  "mfa_backup_codes",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    factorId: varchar("factor_id", { length: 36 })
+      .notNull()
+      .references(() => mfaFactors.id, { onDelete: "cascade" }),
+    hash: varchar("hash", { length: 64 }).notNull(),
+    usedAt: timestamp("used_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    factorIdx: index("mfa_backup_codes_factor_id_idx").on(table.factorId),
+    usedIdx: index("mfa_backup_codes_used_at_idx").on(table.usedAt),
+  }),
+);
+
+export const vaultSecrets = mysqlTable(
+  "vault_secrets",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    organizationId: varchar("organization_id", { length: 36 })
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 255 }).notNull(),
+    provider: mysqlEnum("vault_provider", ["hashicorp", "doppler", "env"]).notNull(),
+    path: varchar("path", { length: 512 }).notNull(),
+    encryptedValue: text("encrypted_value").notNull(),
+    version: int("version").notNull().default(1),
+    createdBy: varchar("created_by", { length: 36 }).references(() => users.id),
+    expiresAt: timestamp("expires_at"),
+    revokedAt: timestamp("revoked_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    orgIdx: index("vault_secrets_organization_id_idx").on(table.organizationId),
+    providerIdx: index("vault_secrets_provider_idx").on(table.provider),
+    pathIdx: index("vault_secrets_path_idx").on(table.path),
+    expiresIdx: index("vault_secrets_expires_at_idx").on(table.expiresAt),
+  }),
+);
+
+export const webhooks = mysqlTable(
+  "webhooks",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    organizationId: varchar("organization_id", { length: 36 })
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    eventType: varchar("event_type", { length: 64 }).notNull(),
+    targetUrl: text("target_url").notNull(),
+    secretHash: varchar("secret_hash", { length: 64 }).notNull(),
+    revokedAt: timestamp("revoked_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    orgIdx: index("webhooks_organization_id_idx").on(table.organizationId),
+    eventIdx: index("webhooks_event_type_idx").on(table.eventType),
+    createdIdx: index("webhooks_created_at_idx").on(table.createdAt),
+  }),
+);
+

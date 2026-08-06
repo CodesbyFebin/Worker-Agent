@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { and, eq, gt, sql } from "drizzle-orm";
 import { db } from "../../_core/db";
-import { governancePolicies, orgBudgets, organizationMembers, securityEvents, users } from "../../../drizzle/schema";
+import { governancePolicies, orgBudgets, organizationMembers, securityEvents, users, roles } from "../../../drizzle/schema";
 import { recordSecurityEvent, DEFAULT_GOVERNANCE_RULES } from "./engine";
 
 export type PolicyRule = {
@@ -9,7 +9,7 @@ export type PolicyRule = {
   description: string;
   enforce: boolean;
   severity: "info" | "low" | "medium" | "high" | "critical";
-  predicate: (ctx: PolicyContext) => PolicyDecision;
+  predicate: (ctx: PolicyContext) => PolicyDecision | Promise<PolicyDecision>;
 };
 
 export type PolicyContext = {
@@ -33,7 +33,7 @@ export const BUILTIN_POLICIES: PolicyRule[] = [
     description: "Hard budget enforcement blocks spend when exceeded",
     enforce: true,
     severity: "high",
-    predicate: async (ctx) => {
+    predicate: async (ctx: PolicyContext): Promise<PolicyDecision> => {
       if (ctx.action !== "agent.execution.started") return { allowed: true };
       const [budget] = await db.select().from(orgBudgets).where(eq(orgBudgets.organizationId, ctx.organizationId)).limit(1);
       if (!budget || budget.enforcement !== "hard") return { allowed: true };
@@ -56,7 +56,7 @@ export const BUILTIN_POLICIES: PolicyRule[] = [
     description: "Require approval for workflow.publish actions",
     enforce: true,
     severity: "medium",
-    predicate: (ctx) => {
+    predicate: (ctx: PolicyContext): PolicyDecision => {
       if (ctx.action !== "workflow.publish.started") return { allowed: true };
       return { allowed: false, reason: "workflow.publish.started requires explicit approval policy", metadata: {} };
     },
@@ -66,7 +66,7 @@ export const BUILTIN_POLICIES: PolicyRule[] = [
     description: "Limit admin role assignments",
     enforce: false,
     severity: "low",
-    predicate: async (ctx) => {
+    predicate: async (ctx: PolicyContext): Promise<PolicyDecision> => {
       if (ctx.action !== "member.role.updated") return { allowed: true };
       const payload = (ctx.payload ?? {}) as Record<string, unknown>;
       const newRole = typeof payload.roleSlug === "string" ? payload.roleSlug : null;
@@ -93,7 +93,7 @@ export const BUILTIN_POLICIES: PolicyRule[] = [
     description: "Flag scripts untouched for 7 days",
     enforce: false,
     severity: "low",
-    predicate: async (ctx) => {
+    predicate: async (ctx: PolicyContext): Promise<PolicyDecision> => {
       if (ctx.action !== "script.publish.attempted") return { allowed: true };
       return { allowed: true, metadata: { reviewRecommended: true } };
     },

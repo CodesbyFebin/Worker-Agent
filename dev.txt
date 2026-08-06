@@ -1,0 +1,1 @@
+{"result":{"data":{"json":{"userId":"local-dev-user","email":"local-dev-user@local.dev","organizationId":"87fbe20c-7fc2-40ba-9826-abdd7cf619fa","sessionId":"73e98e6a-1846-4c01-8c00-4da4c50bffcf","developmentOnly":true}}}}

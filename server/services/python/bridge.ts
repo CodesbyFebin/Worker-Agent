@@ -1,3 +1,6 @@
+import { metrics } from "../../_core/metrics";
+import { pythonBridgeLogger } from "../../_core/logger";
+
 export type ThumbnailScoreResult = {
   score: number;
   emotion: string;
@@ -37,17 +40,23 @@ export class PythonBridgeError extends Error {
 
 export class PythonBridgeClient {
   private readonly baseUrl: string;
+  private readonly logger = pythonBridgeLogger({});
 
   constructor(baseUrl?: string) {
     this.baseUrl = baseUrl || process.env.PYTHON_API_URL || "http://localhost:8000";
   }
 
   private async post<T>(path: string, body: unknown): Promise<T> {
+    const start = Date.now();
+    this.logger.debug({ path, body: JSON.stringify(body).slice(0, 200) }, "python_bridge_post_started");
     const res = await fetch(`${this.baseUrl}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body ?? {}),
     });
+    const durationMs = Date.now() - start;
+    metrics.pythonBridgeRequestsTotal.inc({ endpoint: path, status: String(res.status) });
+    metrics.pythonBridgeDurationMs.observe({ endpoint: path }, durationMs);
     if (!res.ok) {
       let parsed: unknown;
       try {
@@ -55,16 +64,23 @@ export class PythonBridgeClient {
       } catch {
         parsed = await res.text();
       }
+      this.logger.error({ path, status: res.status, durationMs, error: parsed }, "python_bridge_post_failed");
       throw new PythonBridgeError(`Python API ${path} failed: ${res.status}`, res.status, parsed);
     }
+    this.logger.debug({ path, status: res.status, durationMs }, "python_bridge_post_completed");
     return res.json() as Promise<T>;
   }
 
   private async upload<T>(path: string, formData: FormData): Promise<T> {
+    const start = Date.now();
+    this.logger.debug({ path }, "python_bridge_upload_started");
     const res = await fetch(`${this.baseUrl}${path}`, {
       method: "POST",
       body: formData,
     });
+    const durationMs = Date.now() - start;
+    metrics.pythonBridgeRequestsTotal.inc({ endpoint: path, status: String(res.status) });
+    metrics.pythonBridgeDurationMs.observe({ endpoint: path }, durationMs);
     if (!res.ok) {
       let parsed: unknown;
       try {
@@ -72,8 +88,10 @@ export class PythonBridgeClient {
       } catch {
         parsed = await res.text();
       }
+      this.logger.error({ path, status: res.status, durationMs, error: parsed }, "python_bridge_upload_failed");
       throw new PythonBridgeError(`Python API ${path} failed: ${res.status}`, res.status, parsed);
     }
+    this.logger.debug({ path, status: res.status, durationMs }, "python_bridge_upload_completed");
     return res.json() as Promise<T>;
   }
 

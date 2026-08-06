@@ -1,0 +1,87 @@
+{
+  "_comment": "Niche templates for channels 04-10. Copy each block to its own channel_0X.json file and customize.",
+
+  "channel_04": {
+    "id": "channel_04", "channelName": "GameVault", "category": "gaming",
+    "tone": "conversational", "voiceGender": "male", "energyLevel": "high",
+    "seedKeywords": ["gaming tips", "game reviews", "best games 2026", "gaming setup"],
+    "microNodes": ["gaming", "tech", "pop-culture", "esports"],
+    "subreddits": ["gaming", "pcgaming", "gamereviews"],
+    "targetTimezone": "America/Chicago", "optimalUploadHour": 19,
+    "uploadDaysOfWeek": [2, 5, 6], "maxVideosPerWeek": 5,
+    "averageCPM": 3.5, "baseMonetizationScore": 0.55,
+    "channelPersona": { "backstory": "A lifelong gamer reviewing titles and sharing pro tips", "catchphrases": ["no cap", "and that's the meta shift"], "quirks": ["references gaming culture", "uses gaming analogies"] }
+  },
+
+  "channel_05": {
+    "id": "channel_05", "channelName": "KitchenAlchemy", "category": "cooking",
+    "tone": "conversational", "voiceGender": "female", "energyLevel": "medium",
+    "seedKeywords": ["easy recipes", "meal prep", "healthy cooking", "quick dinner"],
+    "microNodes": ["cooking", "health", "culture", "minimalism", "budget-living"],
+    "subreddits": ["EatCheapAndHealthy", "MealPrepSunday", "recipes"],
+    "targetTimezone": "America/New_York", "optimalUploadHour": 12,
+    "uploadDaysOfWeek": [1, 3, 6], "maxVideosPerWeek": 4,
+    "averageCPM": 4.0, "baseMonetizationScore": 0.6,
+    "channelPersona": { "backstory": "A home cook who makes restaurant-quality meals for busy families on a budget", "catchphrases": ["trust the process", "and this is the secret ingredient"], "quirks": ["shares family recipe stories", "always notes time savings"] }
+  },
+
+  "channel_06": {
+    "id": "channel_06", "channelName": "TrueCaseFiles", "category": "true-crime",
+    "tone": "cinematic", "voiceGender": "female", "energyLevel": "medium",
+    "seedKeywords": ["true crime cases", "unsolved mysteries", "criminal psychology", "cold cases"],
+    "microNodes": ["true-crime", "psychology", "history", "mystery", "documentary"],
+    "subreddits": ["TrueCrime", "UnresolvedMysteries", "serialkillers"],
+    "targetTimezone": "America/New_York", "optimalUploadHour": 20,
+    "uploadDaysOfWeek": [3, 6], "maxVideosPerWeek": 2,
+    "averageCPM": 5.0, "baseMonetizationScore": 0.5,
+    "channelPersona": { "backstory": "A former criminal justice student fascinated by the psychology behind crimes", "catchphrases": ["and that's when everything changed", "the evidence tells a different story"], "quirks": ["uses dramatic pauses", "builds evidence methodically"] }
+  },
+
+  "channel_07": {
+    "id": "channel_07", "channelName": "MindForge", "category": "education",
+    "tone": "educational", "voiceGender": "neutral", "energyLevel": "medium",
+    "seedKeywords": ["learning techniques", "memory improvement", "productivity", "skill building"],
+    "microNodes": ["education", "productivity", "science", "self-improvement", "career"],
+    "subreddits": ["GetStudying", "learnprogramming", "selfimprovement"],
+    "targetTimezone": "America/New_York", "optimalUploadHour": 8,
+    "uploadDaysOfWeek": [1, 4], "maxVideosPerWeek": 3,
+    "averageCPM": 7.0, "baseMonetizationScore": 0.72,
+    "channelPersona": { "backstory": "A neuroscience enthusiast who breaks down the science of learning and peak performance", "catchphrases": ["the research is clear", "and here's why this works"], "quirks": ["uses brain science analogies", "gives step-by-step frameworks"] }
+  },
+
+  "channel_08": {
+    "id": "channel_08", "channelName": "SoloFounder", "category": "finance",
+    "tone": "motivational", "voiceGender": "male", "energyLevel": "high",
+    "seedKeywords": ["side hustle", "online business", "freelancing", "passive income streams"],
+    "microNodes": ["entrepreneurship", "finance", "productivity", "self-improvement", "tech"],
+    "subreddits": ["Entrepreneur", "sidehustle", "digitalnomad"],
+    "targetTimezone": "America/Los_Angeles", "optimalUploadHour": 10,
+    "uploadDaysOfWeek": [2, 5], "maxVideosPerWeek": 3,
+    "averageCPM": 10.0, "baseMonetizationScore": 0.80,
+    "channelPersona": { "backstory": "A solo entrepreneur who built a six-figure business from a laptop and now teaches the exact playbook", "catchphrases": ["execution beats perfection", "this is the exact system I use"], "quirks": ["gives raw business numbers", "shares failures as much as wins"] }
+  },
+
+  "channel_09": {
+    "id": "channel_09", "channelName": "FitProtocol", "category": "fitness",
+    "tone": "motivational", "voiceGender": "male", "energyLevel": "high",
+    "seedKeywords": ["workout plans", "muscle building", "fat loss", "home gym", "calisthenics"],
+    "microNodes": ["fitness", "health", "nutrition", "biohacking", "self-improvement"],
+    "subreddits": ["fitness", "bodyweightfitness", "gainit", "loseit"],
+    "targetTimezone": "America/New_York", "optimalUploadHour": 6,
+    "uploadDaysOfWeek": [1, 3, 5], "maxVideosPerWeek": 5,
+    "averageCPM": 5.5, "baseMonetizationScore": 0.65,
+    "channelPersona": { "backstory": "A certified trainer who went from skinny to athletic without expensive gyms or supplements", "catchphrases": ["consistency beats intensity", "the data doesn't lie"], "quirks": ["shares workout logs", "busts fitness myths with science"] }
+  },
+
+  "channel_10": {
+    "id": "channel_10", "channelName": "TravelUnlocked", "category": "travel",
+    "tone": "conversational", "voiceGender": "female", "energyLevel": "high",
+    "seedKeywords": ["budget travel", "travel tips", "hidden destinations", "digital nomad"],
+    "microNodes": ["travel", "culture", "minimalism", "adventure", "photography"],
+    "subreddits": ["solotravel", "travel", "digitalnomad", "backpacking"],
+    "targetTimezone": "America/New_York", "optimalUploadHour": 16,
+    "uploadDaysOfWeek": [2, 5], "maxVideosPerWeek": 3,
+    "averageCPM": 3.5, "baseMonetizationScore": 0.55,
+    "channelPersona": { "backstory": "A former corporate worker who quit to travel 40+ countries on a tight budget and documents every lesson", "catchphrases": ["and nobody tells you this before you go", "here's what actually matters"], "quirks": ["compares costs specifically", "reveals hidden local tips"] }
+  }
+}

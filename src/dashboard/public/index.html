@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CC-OS Mission Control</title>
+<style>
+:root{--bg:#0a0e1a;--surface:#111827;--card:#1a2236;--border:#1e2d45;--text:#e2e8f0;--muted:#64748b;--green:#22c55e;--yellow:#f59e0b;--orange:#f97316;--red:#ef4444;--blue:#3b82f6;--cyan:#06b6d4;--purple:#8b5cf6;--pink:#ec4899}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px;min-height:100vh}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
+.logo{font-size:18px;font-weight:700;color:var(--cyan);letter-spacing:-.5px}
+.logo span{color:var(--muted);font-weight:400;font-size:13px;margin-left:8px}
+.status-bar{display:flex;gap:16px;align-items:center;font-size:12px}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
+.dot-green{background:var(--green);box-shadow:0 0 6px var(--green)}
+.dot-yellow{background:var(--yellow)}
+.dot-orange{background:var(--orange)}
+.dot-red{background:var(--red);box-shadow:0 0 6px var(--red)}
+.dot-gray{background:var(--muted)}
+.nav{display:flex;gap:4px;padding:0 24px;background:var(--surface);border-bottom:1px solid var(--border)}
+.nav-btn{padding:10px 16px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;border-bottom:2px solid transparent;transition:all .15s}
+.nav-btn.active,.nav-btn:hover{color:var(--text);border-bottom-color:var(--cyan)}
+.main{padding:24px;max-width:1400px;margin:0 auto}
+.section{display:none}.section.active{display:block}
+h2{font-size:16px;font-weight:600;margin-bottom:16px;color:var(--text)}
+.grid-10{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:24px}
+.channel-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;transition:border-color .2s}
+.channel-card:hover{border-color:var(--blue)}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.card-id{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:1px}
+.card-niche{font-size:11px;background:var(--surface);padding:2px 8px;border-radius:4px;color:var(--cyan)}
+.card-name{font-size:15px;font-weight:600;margin-bottom:4px}
+.card-status{display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:12px}
+.card-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.metric-box{background:var(--surface);border-radius:6px;padding:8px;text-align:center}
+.metric-val{font-size:16px;font-weight:700;color:var(--cyan)}
+.metric-lbl{font-size:10px;color:var(--muted);margin-top:2px}
+.platform-badges{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
+.badge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600}
+.badge-yt{background:#ff0000;color:#fff}
+.badge-ig{background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:#fff}
+.badge-fb{background:#1877f2;color:#fff}
+.badge-pending{background:var(--border);color:var(--muted)}
+.card-actions{display:flex;gap:6px}
+.btn{padding:6px 12px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:500;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-danger{background:var(--red);color:#fff}
+.btn-success{background:var(--green);color:#000}
+.btn-ghost{background:var(--border);color:var(--text)}
+.btn-sm{padding:4px 8px;font-size:11px}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">CC-OS <span>Mission Control</span></div>
+  <div class="status-bar">
+    <span id="hdr-healthy"><span class="status-dot dot-green"></span><span id="cnt-healthy">0</span> healthy</span>
+    <span id="hdr-warning"><span class="status-dot dot-yellow"></span><span id="cnt-warning">0</span> warning</span>
+    <span id="hdr-critical"><span class="status-dot dot-red"></span><span id="cnt-critical">0</span> critical</span>
+    <span style="color:var(--muted)" id="last-updated">—</span>
+  </div>
+</div>
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection('channels')">📊 Channels</button>
+  <button class="nav-btn" onclick="showSection('calendar')">📅 Calendar</button>
+  <button class="nav-btn" onclick="showSection('bulk')">🚀 Bulk Publish</button>
+  <button class="nav-btn" onclick="showSection('vault')">🔑 Token Vault</button>
+  <button class="nav-btn" onclick="showSection('audit')">📋 Audit Log</button>
+  <button class="nav-btn" onclick="showSection('analytics')">📈 Analytics</button>
+</div>
+<div class="main">
+
+<!-- CHANNELS SECTION -->
+<div id="sec-channels" class="section active">
+  <h2>Channel Command Center</h2>
+  <div class="grid-10" id="channel-grid">
+    <div style="color:var(--muted);grid-column:1/-1;text-align:center;padding:40px">Loading channels...</div>
+  </div>
+  <div style="display:flex;gap:16px;align-items:center;margin-bottom:16px">
+    <h2 style="margin:0">Queue Status</h2>
+    <div id="queue-stats" style="font-size:13px;color:var(--muted)">Loading...</div>
+  </div>
+  <div id="ab-summary" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;font-size:13px;color:var(--muted)">Loading A/B tests...</div>
+</div>
+
+<!-- CALENDAR SECTION -->
+<div id="sec-calendar" class="section">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h2 style="margin:0">Content Calendar</h2>
+    <div style="display:flex;gap:8px">
+      <span style="font-size:12px"><span style="background:#1877f2;padding:2px 6px;border-radius:3px">■</span> Facebook</span>
+      <span style="font-size:12px"><span style="background:#ff0000;padding:2px 6px;border-radius:3px">■</span> YouTube</span>
+      <span style="font-size:12px"><span style="background:#e6683c;padding:2px 6px;border-radius:3px">■</span> Instagram</span>
+    </div>
+  </div>
+  <div id="calendar-grid" style="background:var(--card);border:1px solid var(--border);border-radius:8px;min-height:400px;overflow:auto"></div>
+</div>
+
+<!-- BULK PUBLISH SECTION -->
+<div id="sec-bulk" class="section">
+  <h2>Bulk Publish</h2>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:24px;max-width:700px">
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px">Target Channels</label>
+      <div id="channel-checkboxes" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px">Target Platforms</label>
+      <div style="display:flex;gap:12px">
+        <label><input type="checkbox" id="plat-yt" checked> YouTube</label>
+        <label><input type="checkbox" id="plat-ig" checked> Instagram</label>
+        <label><input type="checkbox" id="plat-fb" checked> Facebook</label>
+      </div>
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px">Topic / Keyword</label>
+      <input id="bulk-topic" type="text" placeholder="e.g. best AI tools 2026" style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text)">
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px">Schedule Time</label>
+      <input id="bulk-time" type="datetime-local" style="padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text)">
+      <span style="margin-left:8px;font-size:12px;color:var(--muted)">Leave blank = publish now</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost" onclick="dryRunBulk()">👁 Preview</button>
+      <button class="btn btn-primary" onclick="runBulk()">🚀 Launch Bulk Publish</button>
+    </div>
+    <div id="bulk-result" style="margin-top:16px;font-size:13px;white-space:pre-wrap;color:var(--muted)"></div>
+  </div>
+  <h2 style="margin-top:24px">Recent Batches</h2>
+  <div id="bulk-history"></div>
+</div>
+
+<!-- TOKEN VAULT SECTION -->
+<div id="sec-vault" class="section">
+  <h2>Token Vault</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:900px">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:24px">
+      <h3 style="font-size:14px;margin-bottom:16px">Rotate Token</h3>
+      <div style="margin-bottom:12px">
+        <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px">Channel</label>
+        <select id="vault-channel" style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text)">
+          <option value="">Select channel...</option>
+        </select>
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px">Platform</label>
+        <select id="vault-platform" style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text)">
+          <option value="youtube">YouTube</option>
+          <option value="instagram">Instagram</option>
+          <option value="facebook">Facebook</option>
+        </select>
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px">Access Token</label>
+        <input id="vault-token" type="password" placeholder="EAAH... or refresh token" style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text)">
+      </div>
+      <div id="vault-extra" style="display:none;margin-bottom:12px">
+        <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px" id="vault-extra-label">Business ID / Page ID</label>
+        <input id="vault-extra-val" type="text" placeholder="ID..." style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text)">
+      </div>
+      <button class="btn btn-primary" onclick="rotateToken()">Save Token</button>
+      <div id="vault-msg" style="margin-top:10px;font-size:12px;color:var(--green)"></div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:24px">
+      <h3 style="font-size:14px;margin-bottom:16px">Vault Status</h3>
+      <div id="vault-summary"></div>
+    </div>
+  </div>
+</div>
+
+<!-- AUDIT LOG SECTION -->
+<div id="sec-audit" class="section">
+  <h2>Audit Log</h2>
+  <div id="audit-table" style="background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:auto;max-height:600px"></div>
+</div>
+
+<!-- ANALYTICS SECTION -->
+<div id="sec-analytics" class="section">
+  <h2>Cross-Platform Analytics</h2>
+  <div id="analytics-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px"></div>
+</div>
+
+</div><!-- /main -->
+
+<style>
+.health-bar{height:6px;border-radius:3px;background:var(--border);margin-top:8px}
+.health-fill{height:100%;border-radius:3px;transition:width .4s}
+.event-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border)}
+.event-row:hover{background:var(--surface)}
+.event-platform{width:70px;font-size:11px;font-weight:600}
+.cal-week{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border)}
+.cal-day{background:var(--card);padding:8px;min-height:100px}
+.cal-day-header{font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600}
+.cal-event{padding:3px 6px;border-radius:4px;font-size:11px;margin-bottom:3px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-event.youtube{background:#ff0000;color:#fff}
+.cal-event.instagram{background:#e6683c;color:#fff}
+.cal-event.facebook{background:#1877f2;color:#fff}
+.cal-event.scheduled{opacity:.7}
+.cal-event.published{opacity:1}
+.cal-event.failed{background:var(--red);opacity:.8}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:12px}
+th{color:var(--muted);font-weight:600;background:var(--surface)}
+tr:hover td{background:rgba(255,255,255,.02)}
+.platform-bar{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.platform-bar-fill{height:10px;border-radius:5px}
+</style>
+
+<script>
+const API = '';
+let channels = [], calendarEvents = [], vaultData = [];
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'calendar') renderCalendar();
+  if (name === 'vault') loadVault();
+  if (name === 'audit') loadAudit();
+  if (name === 'analytics') loadAnalytics();
+  if (name === 'bulk') loadBulkHistory();
+}
+
+// ── SSE Real-time updates ──────────────────────────────────────────────────
+const evtSrc = new EventSource('/api/events');
+evtSrc.addEventListener('channel:complete', () => loadChannels());
+evtSrc.addEventListener('batch:complete', () => { loadChannels(); loadBulkHistory(); });
+evtSrc.addEventListener('calendar:rescheduled', () => { if (document.getElementById('sec-calendar').classList.contains('active')) renderCalendar(); });
+
+// ── Channels ───────────────────────────────────────────────────────────────
+async function loadChannels() {
+  const [chRes, healthRes, queueRes, abRes] = await Promise.all([
+    fetch('/api/channels').then(r=>r.json()),
+    fetch('/api/health').then(r=>r.json()),
+    fetch('/api/queue').then(r=>r.json()),
+    fetch('/api/ab-tests').then(r=>r.json())
+  ]);
+  channels = chRes;
+  renderChannelGrid(channels, healthRes);
+  renderQueueStats(queueRes);
+  renderABSummary(abRes);
+  updateHeader(healthRes.summary);
+  document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+function renderChannelGrid(chs, healthData) {
+  const grid = document.getElementById('channel-grid');
+  if (!chs.length) { grid.innerHTML = '<div style="color:var(--muted);grid-column:1/-1;text-align:center;padding:40px">No channel data yet. Run: node src/index.js start</div>'; return; }
+  grid.innerHTML = chs.map(ch => {
+    const h = healthData.channels?.[ch.channelId] || {};
+    const statusColor = {healthy:'--green',warning:'--yellow',degraded:'--orange',critical:'--red',unverified:'--muted'}[h.health_status||'unverified'];
+    const score = h.health_status === 'healthy' ? 92 : h.health_status === 'warning' ? 65 : h.health_status === 'degraded' ? 45 : h.health_status === 'critical' ? 20 : 0;
+    const fillColor = {healthy:'var(--green)',warning:'var(--yellow)',degraded:'var(--orange)',critical:'var(--red)',unverified:'var(--muted)'}[h.health_status||'unverified'];
+    const platforms = ch.platforms || ['youtube'];
+    const statusLabel = {idle:'Idle',generating:'Generating...',uploading:'Uploading...',cooldown:'Cooldown',paused:'Paused',flagged:'FLAGGED',scheduled:'Scheduled'}[ch.status]||ch.status;
+    return `<div class="channel-card">
+      <div class="card-header">
+        <span class="card-id">CH${ch.channelId}</span>
+        <span class="card-niche">${ch.niche||'—'}</span>
+      </div>
+      <div class="card-name">${(ch.niche||'').charAt(0).toUpperCase()+(ch.niche||'').slice(1)} Channel</div>
+      <div class="card-status">
+        <span class="status-dot" style="background:var(${statusColor})"></span>
+        <span style="color:var(${statusColor})">${(h.health_status||'unverified').toUpperCase()}</span>
+        <span style="color:var(--muted);margin-left:auto">${statusLabel}</span>
+      </div>
+      <div class="card-metrics">
+        <div class="metric-box"><div class="metric-val">${fmtNum(h.subscriber_count||0)}</div><div class="metric-lbl">Subscribers</div></div>
+        <div class="metric-box"><div class="metric-val">${fmtNum(h.total_views_last_30d||0)}</div><div class="metric-lbl">Views/30d</div></div>
+        <div class="metric-box"><div class="metric-val">$${(h.estimated_revenue||0).toFixed(0)}</div><div class="metric-lbl">Est. Revenue</div></div>
+        <div class="metric-box"><div class="metric-val">${ch.weeklyUploads||0}</div><div class="metric-lbl">This Week</div></div>
+      </div>
+      <div class="platform-badges">
+        ${platforms.includes('youtube')?'<span class="badge badge-yt">YT</span>':'<span class="badge badge-pending">YT</span>'}
+        ${platforms.includes('instagram')?'<span class="badge badge-ig">IG</span>':'<span class="badge badge-pending">IG</span>'}
+        ${platforms.includes('facebook')?'<span class="badge badge-fb">FB</span>':'<span class="badge badge-pending">FB</span>'}
+      </div>
+      <div class="health-bar"><div class="health-fill" style="width:${score}%;background:${fillColor}"></div></div>
+      ${h.last_error_message?`<div style="font-size:11px;color:var(--red);margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${h.last_error_message}</div>`:''}
+      <div class="card-actions" style="margin-top:12px">
+        ${ch.status==='paused'
+          ?`<button class="btn btn-success btn-sm" onclick="resumeChannel('${ch.channelId}')">▶ Resume</button>`
+          :`<button class="btn btn-ghost btn-sm" onclick="pauseChannel('${ch.channelId}')">⏸ Pause</button>`}
+        <button class="btn btn-primary btn-sm" onclick="triggerBurst('${ch.channelId}')">⚡ Burst</button>
+      </div>
+    </div>`;
+  }).join('');
+  buildBulkCheckboxes(chs);
+}
+
+function updateHeader(summary) {
+  if (!summary) return;
+  document.getElementById('cnt-healthy').textContent = summary.counts?.healthy||0;
+  document.getElementById('cnt-warning').textContent = (summary.counts?.warning||0)+(summary.counts?.degraded||0);
+  document.getElementById('cnt-critical').textContent = summary.counts?.critical||0;
+}
+
+function renderQueueStats(q) {
+  document.getElementById('queue-stats').innerHTML =
+    `<span style="color:var(--green)">Pending: ${q.pending}</span> &nbsp;
+     <span style="color:var(--yellow)">Assigned: ${q.assigned}</span> &nbsp;
+     <span style="color:var(--muted)">Done: ${q.completed}</span> &nbsp;
+     <span style="color:var(--red)">Failed: ${q.failed}</span>`;
+}
+
+function renderABSummary(ab) {
+  document.getElementById('ab-summary').innerHTML =
+    `<strong>A/B Tests (7d):</strong> ${ab.totalTests} tests &nbsp;|&nbsp; Win rate: ${((ab.successRate||0)*100).toFixed(0)}% &nbsp;|&nbsp; Avg CTR lift: <span style="color:var(--green)">+${((ab.avgCTRImprovement||0)*100).toFixed(1)}%</span>`+
+    (ab.winningTitles?.length?`<br><span style="color:var(--muted)">Best title: "${ab.winningTitles[0]?.title?.slice(0,60)}"</span>`:'');
+}
+
+async function pauseChannel(id) { await fetch(`/api/channels/${id}/pause`,{method:'POST'}); loadChannels(); }
+async function resumeChannel(id) { await fetch(`/api/channels/${id}/resume`,{method:'POST'}); loadChannels(); }
+function triggerBurst(id) {
+  const topic = prompt(`Burst for Channel ${id} — enter a topic (or leave blank for auto):`);
+  runBulkFor([id], topic || undefined);
+}
+
+// ── Calendar ───────────────────────────────────────────────────────────────
+async function renderCalendar() {
+  const startDate = new Date(Date.now() - 3 * 86400000);
+  const endDate   = new Date(Date.now() + 7 * 86400000);
+  const res = await fetch(`/api/calendar?start=${startDate.toISOString()}&end=${endDate.toISOString()}`);
+  calendarEvents = await res.json();
+  const grid = document.getElementById('calendar-grid');
+  const days = [];
+  for (let i = -3; i <= 6; i++) {
+    const d = new Date(Date.now() + i * 86400000);
+    days.push(d);
+  }
+  grid.innerHTML = `<div class="cal-week">${days.map(d => {
+    const dayStr = d.toISOString().split('T')[0];
+    const isToday = dayStr === new Date().toISOString().split('T')[0];
+    const dayEvents = calendarEvents.filter(e => e.scheduled_time?.startsWith(dayStr));
+    return `<div class="cal-day" ${isToday?'style="background:rgba(6,182,212,.06);border:1px solid var(--cyan)"':''}>
+      <div class="cal-day-header">${d.toLocaleDateString('en',{weekday:'short',month:'short',day:'numeric'})}</div>
+      ${dayEvents.map(e=>`<div class="cal-event ${e.platform} ${e.status}" title="${e.title||''}" draggable="true" data-id="${e.id}" ondragstart="dragStart(event)">${platformIcon(e.platform)} CH${e.channelId} ${(e.title||'').slice(0,20)}</div>`).join('')}
+    </div>`;
+  }).join('')}</div>`;
+  grid.querySelectorAll('.cal-day').forEach(day => {
+    day.addEventListener('dragover', e => e.preventDefault());
+    day.addEventListener('drop', async e => {
+      e.preventDefault();
+      const id = e.dataTransfer.getData('text/plain');
+      const header = day.querySelector('.cal-day-header')?.textContent;
+      if (!id || !header) return;
+      const newDate = new Date(header + ' ' + new Date().getFullYear());
+      newDate.setHours(15, 0, 0, 0);
+      await fetch(`/api/calendar/${id}/reschedule`, {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({scheduledTime:newDate.toISOString()})});
+      renderCalendar();
+    });
+  });
+}
+
+function dragStart(e) { e.dataTransfer.setData('text/plain', e.target.dataset.id); }
+function platformIcon(p) { return {youtube:'▶',instagram:'📷',facebook:'👍'}[p]||'●'; }
+
+// ── Bulk Publish ───────────────────────────────────────────────────────────
+function buildBulkCheckboxes(chs) {
+  const container = document.getElementById('channel-checkboxes');
+  if (!container.children.length) {
+    container.innerHTML = chs.map(ch =>
+      `<label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer">
+        <input type="checkbox" class="bulk-ch" value="${ch.channelId}"> CH${ch.channelId} (${ch.niche||'?'})
+      </label>`
+    ).join('');
+  }
+}
+
+function getSelectedChannels() {
+  return [...document.querySelectorAll('.bulk-ch:checked')].map(cb => cb.value);
+}
+function getSelectedPlatforms() {
+  return ['youtube','instagram','facebook'].filter(p => document.getElementById('plat-'+p.slice(0,2)).checked);
+}
+
+async function dryRunBulk() {
+  const channels = getSelectedChannels();
+  if (!channels.length) { alert('Select at least one channel'); return; }
+  const res = await fetch('/api/bulk-dispatch', {method:'POST',headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ channelIds: channels, platforms: getSelectedPlatforms(), dryRun: true,
+      contentSource: { type: 'opportunity', data: { keyword: document.getElementById('bulk-topic').value || 'auto', opportunityScore: 0.8 } }
+    })});
+  const data = await res.json();
+  document.getElementById('bulk-result').textContent = '👁 Preview:\n' + JSON.stringify(data, null, 2);
+}
+
+async function runBulk() {
+  const channels = getSelectedChannels();
+  if (!channels.length) { alert('Select at least one channel'); return; }
+  const topic = document.getElementById('bulk-topic').value;
+  if (!topic) { alert('Enter a topic or keyword'); return; }
+  document.getElementById('bulk-result').textContent = '⏳ Dispatching...';
+  const res = await fetch('/api/bulk-dispatch', {method:'POST',headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ channelIds: channels, platforms: getSelectedPlatforms(),
+      scheduledTime: document.getElementById('bulk-time').value || 'now',
+      contentSource: { type: 'opportunity', data: { keyword: topic, opportunityScore: 0.8 } }
+    })});
+  const data = await res.json();
+  document.getElementById('bulk-result').textContent = '✅ Dispatched:\n' + JSON.stringify(data, null, 2);
+  loadBulkHistory();
+}
+
+async function runBulkFor(channelIds, topic) {
+  await fetch('/api/bulk-dispatch', {method:'POST',headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ channelIds, platforms: ['youtube','instagram','facebook'],
+      scheduledTime: 'now', contentSource: { type: 'opportunity', data: { keyword: topic || 'auto', opportunityScore: 0.8 } }
+    })});
+  loadChannels();
+}
+
+async function loadBulkHistory() {
+  const data = await fetch('/api/bulk-dispatch/history').then(r=>r.json());
+  document.getElementById('bulk-history').innerHTML = data.length
+    ? `<table><thead><tr><th>Batch ID</th><th>Channels</th><th>Dispatched</th><th>Failed</th><th>Status</th><th>Time</th></tr></thead><tbody>
+        ${data.map(b=>`<tr><td style="font-family:monospace;font-size:11px">${b.batchId?.slice(0,8)}...</td>
+        <td>${Object.keys(b.channelResults||{}).length}</td>
+        <td style="color:var(--green)">${b.totalDispatched||0}</td>
+        <td style="color:${b.totalFailed?'var(--red)':'var(--muted)'}">${b.totalFailed||0}</td>
+        <td><span style="color:${b.status==='complete'?'var(--green)':b.status==='failed'?'var(--red)':'var(--yellow)'}">${b.status}</span></td>
+        <td style="color:var(--muted)">${new Date(b.startedAt).toLocaleString()}</td></tr>`).join('')}
+      </tbody></table>`
+    : '<div style="color:var(--muted);padding:24px;text-align:center">No bulk dispatches yet</div>';
+}
+
+// ── Token Vault ────────────────────────────────────────────────────────────
+async function loadVault() {
+  const res = await fetch('/api/vault').then(r=>r.json());
+  vaultData = res;
+  const sel = document.getElementById('vault-channel');
+  if (!sel.children.length || sel.children.length === 1) {
+    for (let i = 1; i <= 10; i++) {
+      const opt = document.createElement('option');
+      opt.value = String(i).padStart(2,'0');
+      opt.textContent = `Channel ${String(i).padStart(2,'0')}`;
+      sel.appendChild(opt);
+    }
+  }
+  document.getElementById('vault-summary').innerHTML = res.length
+    ? `<table><thead><tr><th>Channel</th><th>Platform</th><th>Has Token</th><th>Updated</th></tr></thead><tbody>
+        ${res.map(e=>`<tr><td>CH${e.channelId}</td><td>${e.type}</td>
+        <td>${e.hasValue?'<span style="color:var(--green)">✓</span>':'<span style="color:var(--red)">✗</span>'}</td>
+        <td style="color:var(--muted)">${e.updatedAt?new Date(e.updatedAt).toLocaleDateString():'-'}</td></tr>`).join('')}
+      </tbody></table>`
+    : '<div style="color:var(--muted)">No tokens in vault yet</div>';
+  document.getElementById('vault-platform').addEventListener('change', e => {
+    const needsExtra = ['instagram','facebook'].includes(e.target.value);
+    document.getElementById('vault-extra').style.display = needsExtra ? 'block' : 'none';
+    document.getElementById('vault-extra-label').textContent = e.target.value === 'instagram' ? 'Instagram Business ID' : 'Facebook Page ID';
+  });
+}
+
+async function rotateToken() {
+  const channelId = document.getElementById('vault-channel').value;
+  const platform  = document.getElementById('vault-platform').value;
+  const token     = document.getElementById('vault-token').value;
+  const extraVal  = document.getElementById('vault-extra-val').value;
+  if (!channelId || !token) { document.getElementById('vault-msg').style.color='var(--red)'; document.getElementById('vault-msg').textContent='Channel and token are required'; return; }
+  const extra = platform === 'instagram' ? { businessId: extraVal } : platform === 'facebook' ? { pageId: extraVal } : {};
+  const res = await fetch('/api/vault/rotate', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({channelId,platform,token,extraData:extra})});
+  const data = await res.json();
+  document.getElementById('vault-msg').style.color = data.success ? 'var(--green)' : 'var(--red)';
+  document.getElementById('vault-msg').textContent = data.success ? '✅ Token saved securely' : '❌ ' + (data.error||'Failed');
+  if (data.success) { document.getElementById('vault-token').value=''; loadVault(); }
+}
+
+// ── Audit Log ──────────────────────────────────────────────────────────────
+async function loadAudit() {
+  const data = await fetch('/api/audit?limit=50').then(r=>r.json());
+  document.getElementById('audit-table').innerHTML = data.length
+    ? `<table><thead><tr><th>Time</th><th>Action</th><th>Channel</th><th>Details</th></tr></thead><tbody>
+        ${data.map(e=>`<tr><td style="color:var(--muted);white-space:nowrap">${new Date(e.timestamp).toLocaleString()}</td>
+        <td><code style="background:var(--surface);padding:2px 6px;border-radius:3px;font-size:11px">${e.action}</code></td>
+        <td>${e.channelId?'CH'+e.channelId:'-'}</td>
+        <td style="color:var(--muted);font-size:12px">${e.reason||e.platform||e.batchId?.slice(0,8)||''}</td></tr>`).join('')}
+      </tbody></table>`
+    : '<div style="color:var(--muted);padding:24px;text-align:center">No audit entries yet</div>';
+}
+
+// ── Analytics ──────────────────────────────────────────────────────────────
+async function loadAnalytics() {
+  const grid = document.getElementById('analytics-grid');
+  grid.innerHTML = '<div style="color:var(--muted);grid-column:1/-1;text-align:center;padding:40px">Loading cross-platform analytics...</div>';
+  const cards = await Promise.all(Array.from({length:10},(_,i)=>{
+    const id = String(i+1).padStart(2,'0');
+    return fetch(`/api/metrics/${id}`).then(r=>r.json()).then(m=>({id,metrics:m})).catch(()=>({id,metrics:{}}));
+  }));
+  grid.innerHTML = cards.map(({id,metrics}) => {
+    const yt = metrics.youtube||{}, ig = metrics.instagram||{}, fb = metrics.facebook||{};
+    const total = (yt.views||0)+(ig.views||0)+(fb.views||0)||1;
+    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px">
+      <div style="font-weight:600;margin-bottom:12px">Channel ${id}</div>
+      ${renderPlatformBar('YouTube', yt.views||0, total, '#ff0000')}
+      ${renderPlatformBar('Instagram', ig.views||0, total, '#e6683c')}
+      ${renderPlatformBar('Facebook', fb.views||0, total, '#1877f2')}
+      <div style="font-size:11px;color:var(--muted);margin-top:8px">Total views: ${fmtNum(total===1?0:total)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderPlatformBar(label, views, total, color) {
+  const pct = total > 1 ? Math.round((views/total)*100) : 0;
+  return `<div class="platform-bar"><span style="width:70px;font-size:11px;color:var(--muted)">${label}</span>
+    <div style="flex:1;background:var(--border);border-radius:5px;height:10px"><div class="platform-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+    <span style="width:50px;text-align:right;font-size:11px">${fmtNum(views)}</span></div>`;
+}
+
+function fmtNum(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
+  if (n >= 1000) return (n/1000).toFixed(1)+'K';
+  return String(n||0);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+loadChannels();
+setInterval(loadChannels, 30000);
+</script>
+</body>
+</html>

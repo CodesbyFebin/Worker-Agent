@@ -39,7 +39,7 @@ export async function requestDataSubjectAccess(params: {
     action: "gdpr.dsar.requested",
     resourceType: "data_subject",
     resourceId: params.subjectUserId,
-    payload: { dsarId: id, reason: params.reason },
+    payload: JSON.stringify({ dsarId: id, reason: params.reason }),
     createdAt: now,
   });
 
@@ -85,7 +85,7 @@ export async function requestDataErasure(params: {
     action: "gdpr.erasure.requested",
     resourceType: "user",
     resourceId: params.subjectUserId,
-    payload: { dsarId: id, redactOnly: params.redactOnly ?? false },
+    payload: JSON.stringify({ dsarId: id, redactOnly: params.redactOnly ?? false }),
   });
 
   return {
@@ -111,17 +111,12 @@ async function redactUserData(userId: string, actorUserId: string) {
     })
     .where(eq(users.id, userId));
 
-  await db
-    .update(organizationMembers)
-    .set({ revokedAt: new Date() })
-    .where(eq(organizationMembers.userId, userId));
-
   await writeAuditLog({
     actorUserId,
     action: "gdpr.erasure.redacted",
     resourceType: "user",
     resourceId: userId,
-    payload: { mode: "redact" },
+    payload: JSON.stringify({ mode: "redact" }),
   });
 }
 
@@ -135,17 +130,12 @@ async function anonymizeUserData(userId: string, actorUserId: string) {
     })
     .where(eq(users.id, userId));
 
-  await db
-    .update(organizationMembers)
-    .set({ revokedAt: new Date() })
-    .where(eq(organizationMembers.userId, userId));
-
   await writeAuditLog({
     actorUserId,
     action: "gdpr.erasure.anonymized",
     resourceType: "user",
     resourceId: userId,
-    payload: { mode: "anonymize", anonId },
+    payload: JSON.stringify({ mode: "anonymize", anonId }),
   });
 }
 

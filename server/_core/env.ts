@@ -89,6 +89,9 @@ const envSchema = z
       .optional()
       .transform((v) => v !== "false" && v !== "0"),
     ARTIFACTS_LOCAL_DIR: z.string().optional(),
+
+    OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: z.string().optional(),
+    OTEL_SERVICE_NAME: z.string().default("worker-agent-api"),
   })
   .superRefine((val, ctx) => {
     if (val.LLM_PROVIDER === "anthropic" && !val.ANTHROPIC_API_KEY) {

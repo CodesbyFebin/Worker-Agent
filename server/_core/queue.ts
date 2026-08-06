@@ -5,6 +5,8 @@ import { Queue, Worker, QueueEvents, type ConnectionOptions } from "bullmq";
 import IORedis from "ioredis";
 import { env } from "./env";
 import { redactString } from "./redact";
+import { queueLogger } from "./logger";
+import { metrics } from "./metrics";
 
 /**
  * BullMQ requires this exact option on a shared ioredis connection used for
@@ -59,16 +61,29 @@ export function registerWorker<T>(
   processor: (data: T) => Promise<void>,
   onExhausted?: (data: T, error: Error) => Promise<void>,
 ) {
+  const qLogger = queueLogger({ queue: queueName });
   const worker = new Worker<T>(
     queueName,
     async (job) => {
+      qLogger.debug({ jobId: job.id, jobName: job.name }, "job_started");
+      const start = Date.now();
       await processor(job.data);
+      const durationMs = Date.now() - start;
+      qLogger.debug({ jobId: job.id, durationMs }, "job_completed");
     },
     { connection, concurrency: 5 },
   );
 
   worker.on("error", (err) => {
-    console.error(`[queue:${queueName}] worker error:`, redactString(err.message));
+    qLogger.error({ error: redactString(err.message) }, "worker_error");
+  });
+
+  worker.on("completed", (job) => {
+    qLogger.debug({ jobId: job.id }, "job_completed_event");
+  });
+
+  worker.on("failed", (job, err) => {
+    qLogger.warn({ jobId: job?.id, error: redactString(err?.message) }, "job_failed_event");
   });
 
   const events = new QueueEvents(queueName, { connection });
@@ -82,11 +97,14 @@ export function registerWorker<T>(
       [QUEUE_NAMES.PYTHON_AUDIO_ANALYSIS]: pythonAudioAnalysisQueue,
       [QUEUE_NAMES.PYTHON_THUMBNAIL_SCORE]: pythonThumbnailScoreQueue,
     };
-    const job = await queueMap[queueName]?.getJob(jobId);
+    const queue = queueMap[queueName];
+    if (!queue) return;
+    const job = await queue.getJob(jobId);
     if (!job) return;
     // job.attemptsMade === job.opts.attempts means every retry is used up.
     if ((job.attemptsMade ?? 0) >= (job.opts.attempts ?? 1)) {
       const err = new Error(failedReason);
+      metrics.dlqEnqueuedTotal.inc({ queue: queueName, job_name: typeof job.name === "string" ? job.name : "unknown" });
       try {
         const { recordDeadLetter } = await import("../services/ops/deadLetter");
         await recordDeadLetter({
@@ -98,9 +116,9 @@ export function registerWorker<T>(
           attemptsMade: job.attemptsMade ?? 0,
         });
       } catch (dlqErr) {
-        console.error(
-          `[queue:${queueName}] DLQ persist failed:`,
-          dlqErr instanceof Error ? redactString(dlqErr.message) : String(dlqErr),
+        qLogger.error(
+          { error: redactString(dlqErr instanceof Error ? dlqErr.message : String(dlqErr)) },
+          "dlq_persist_failed",
         );
       }
       if (onExhausted) {

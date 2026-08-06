@@ -1,0 +1,97 @@
+{
+  "dashboard": {
+    "title": "ContentOS — Platform Overview",
+    "tags": ["contentos", "overview"],
+    "timezone": "browser",
+    "schemaVersion": 37,
+    "version": 0,
+    "refresh": "10s",
+    "time": { "from": "now-6h", "to": "now" },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Request Rate",
+        "type": "timeseries",
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total[5m])) by (method, status)",
+            "legendFormat": "{{method}} {{status}}",
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Request Latency (p95)",
+        "type": "timeseries",
+        "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket[5m])) by (le))",
+            "legendFormat": "p95",
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Error Budget",
+        "type": "stat",
+        "gridPos": { "x": 0, "y": 8, "w": 6, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum(rate(http_errors_total[1h])) / sum(rate(http_requests_total[1h]))",
+            "legendFormat": "error_rate",
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Rate Limited Requests",
+        "type": "timeseries",
+        "gridPos": { "x": 6, "y": 8, "w": 6, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum(rate(rate_limited_total[5m]))",
+            "legendFormat": "rate_limited",
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "DLQ Queue Depth",
+        "type": "timeseries",
+        "gridPos": { "x": 12, "y": 8, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum(dlq_enqueued_total) by (queue)",
+            "legendFormat": "{{queue}}",
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Active Workflow Runs",
+        "type": "timeseries",
+        "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum(workflow_runs_active) by (status)",
+            "legendFormat": "{{status}}",
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Python Bridge Latency (p95)",
+        "type": "timeseries",
+        "gridPos": { "x": 12, "y": 14, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(python_bridge_duration_ms_bucket[5m])) by (le, endpoint))",
+            "legendFormat": "{{endpoint}}",
+          }
+        ]
+      }
+    ]
+  }
+}

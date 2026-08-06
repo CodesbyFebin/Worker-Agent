@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, like, or, sql } from "drizzle-orm";
+import { and, eq, sql, like, desc } from "drizzle-orm";
 import { db } from "../../_core/db";
 import { auditLogs, organizations, users } from "../../../drizzle/schema";
 
@@ -36,37 +36,40 @@ export async function searchAuditLogs(filter: AuditLogFilter): Promise<AuditPagi
   const limit = Math.min(filter.limit ?? 50, 200);
   const cursor = filter.cursor ?? null;
 
-  const conditions: (ReturnType<typeof eq> | ReturnType<typeof gte>)[] = [];
+  const conditions: (ReturnType<typeof eq>)[] = [];
   if (filter.organizationId) conditions.push(eq(auditLogs.organizationId, filter.organizationId));
   if (filter.actorUserId) conditions.push(eq(auditLogs.actorUserId, filter.actorUserId));
   if (filter.action) conditions.push(eq(auditLogs.action, filter.action));
   if (filter.resourceType) conditions.push(eq(auditLogs.resourceType, filter.resourceType));
   if (filter.resourceId) conditions.push(eq(auditLogs.resourceId, filter.resourceId));
-  if (filter.since) conditions.push(gte(auditLogs.createdAt, filter.since));
+  if (filter.since) conditions.push(sql`${auditLogs.createdAt} >= ${filter.since}`);
   if (filter.until) conditions.push(sql`${auditLogs.createdAt} <= ${filter.until}`);
 
   if (filter.search) {
     const term = `%${filter.search.replace(/%/g, "\\%")}%`;
     conditions.push(
-      or(
-        like(auditLogs.action, term),
-        like(auditLogs.resourceType, term),
-        like(auditLogs.resourceId, term),
-        like(auditLogs.payload, term),
-      ),
+      sql`(
+        ${like(auditLogs.action, term)} or
+        ${like(auditLogs.resourceType, term)} or
+        ${like(auditLogs.resourceId, term)} or
+        ${like(auditLogs.payload, term)}
+      )`,
     );
   }
 
   const whereClause = conditions.length === 0 ? undefined : and(...conditions);
 
-  let baseQuery = db.select().from(auditLogs);
-  if (whereClause) baseQuery = baseQuery.where(whereClause) as typeof baseQuery;
-
-  const rows = await baseQuery
+  const rows = await db
+    .select()
+    .from(auditLogs)
+    .where(whereClause as any)
     .orderBy(desc(auditLogs.createdAt), desc(auditLogs.id))
     .limit(limit + 1);
 
-  let items = rows as AuditLogRow[];
+  let items = rows.map((r) => ({
+    ...r,
+    createdAt: r.createdAt.toISOString(),
+  })) as AuditLogRow[];
   let nextCursor: string | null = null;
   if (items.length > limit) {
     items = items.slice(0, limit);
@@ -83,12 +86,12 @@ export async function searchAuditLogs(filter: AuditLogFilter): Promise<AuditPagi
   const [actorMap, orgMap] = await Promise.all([
     actorIds.length
       ? db.select({ id: users.id, email: users.email, displayName: users.displayName }).from(users).where(
-          or(...actorIds.map((id) => eq(users.id, id))),
+          sql`${users.id} in (${actorIds.map((id) => `'${id}'`).join(",")})`,
         )
       : Promise.resolve([]),
     orgIds.length
       ? db.select({ id: organizations.id, name: organizations.name }).from(organizations).where(
-          or(...orgIds.map((id) => eq(organizations.id, id))),
+          sql`${organizations.id} in (${orgIds.map((id) => `'${id}'`).join(",")})`,
         )
       : Promise.resolve([]),
   ]);
@@ -117,7 +120,7 @@ export async function getAuditLogStats(organizationId: string, since: Date) {
       count: sql<number>`count(*)`,
     })
     .from(auditLogs)
-    .where(and(eq(auditLogs.organizationId, organizationId), gte(auditLogs.createdAt, since)))
+    .where(and(eq(auditLogs.organizationId, organizationId), sql`${auditLogs.createdAt} >= ${since}`))
     .groupBy(auditLogs.action)
     .orderBy(sql`count(*) desc`);
 
@@ -127,7 +130,7 @@ export async function getAuditLogStats(organizationId: string, since: Date) {
       count: sql<number>`count(*)`,
     })
     .from(auditLogs)
-    .where(and(eq(auditLogs.organizationId, organizationId), gte(auditLogs.createdAt, since)))
+    .where(and(eq(auditLogs.organizationId, organizationId), sql`${auditLogs.createdAt} >= ${since}`))
     .groupBy(auditLogs.actorUserId)
     .orderBy(sql`count(*) desc`)
     .limit(20);
@@ -135,7 +138,7 @@ export async function getAuditLogStats(organizationId: string, since: Date) {
   const total = await db
     .select({ total: sql<number>`count(*)` })
     .from(auditLogs)
-    .where(and(eq(auditLogs.organizationId, organizationId), gte(auditLogs.createdAt, since)));
+    .where(and(eq(auditLogs.organizationId, organizationId), sql`${auditLogs.createdAt} >= ${since}`));
 
   return {
     total: Number(total[0]?.total ?? 0),

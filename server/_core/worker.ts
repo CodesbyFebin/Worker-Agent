@@ -12,6 +12,7 @@ import {
   registerPythonThumbnailScoreWorker,
 } from "../services/python/workers";
 import { shutdownQueues } from "./queue";
+import { logger } from "./logger";
 
 console.log("Worker Agent.Cloud worker process starting…");
 process.env.WA_PROCESS_ROLE = "worker";
@@ -25,12 +26,13 @@ const pythonTranscriptionWorker = registerPythonTranscriptionWorker();
 const pythonAudioAnalysisWorker = registerPythonAudioAnalysisWorker();
 const pythonThumbnailScoreWorker = registerPythonThumbnailScoreWorker();
 
-console.log(
-  "Workers registered: god-machine-chain, campaign-day, scheduled-publish, workflow-step, youtube-analytics, python-transcription, python-audio-analysis, python-thumbnail-score",
+logger.info(
+  { workers: ["god-machine-chain", "campaign-day", "scheduled-publish", "workflow-step", "youtube-analytics", "python-transcription", "python-audio-analysis", "python-thumbnail-score"] },
+  "workers_registered",
 );
 
 async function shutdown(signal: string) {
-  console.log(`[worker-shutdown] received ${signal}, closing workers and queues…`);
+  logger.info({ signal }, "worker_shutdown_started");
   await Promise.all([
     godMachineWorker.close(),
     campaignDayWorker.close(),
