@@ -1,0 +1,6 @@
+rq==1.16.2
+redis==5.2.1
+whisperx==3.1.1
+librosa==0.10.2.post1
+deepface==0.0.92
+torch==2.4.1

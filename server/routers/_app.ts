@@ -14,6 +14,7 @@ import { toolsRouter } from "./tools.router";
 import { governanceRouter } from "./governance.router";
 import { artifactsRouter } from "./artifacts.router";
 import { opsRouter } from "./ops.router";
+import { youtubeStudioRouter } from "./youtubeStudio.router";
 
 export const appRouter = router({
   auth: authRouter,
@@ -31,6 +32,7 @@ export const appRouter = router({
   governance: governanceRouter,
   artifacts: artifactsRouter,
   ops: opsRouter,
+  youtubeStudio: youtubeStudioRouter,
 });
 
 export type AppRouter = typeof appRouter;

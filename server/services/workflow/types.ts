@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** Node types implemented in Phase 3 runtime (more in later phases). */
+/** Node types implemented in Phase 3+ runtime (YouTube Studio Phase 11). */
 export const WORKFLOW_NODE_TYPES = [
   "trigger.manual",
   "logic.transform",
@@ -9,6 +9,16 @@ export const WORKFLOW_NODE_TYPES = [
   "logic.merge",
   "human.approval",
   "agent.task",
+  "video.script",
+  "video.voice",
+  "video.broll",
+  "video.assemble",
+  "video.compliance",
+  "youtube.upload",
+  "python.caption",
+  "python.audio.analyze",
+  "python.thumbnail.score",
+  "python.virality.check",
   "output.return",
   "output.notify",
 ] as const;
@@ -192,6 +202,96 @@ export function defaultManualWorkflowGraph(goalLabel = "Goal"): WorkflowGraph {
       { id: "e2", source: "transform", target: "agent" },
       { id: "e3", source: "agent", target: "approval" },
       { id: "e4", source: "approval", target: "return" },
+    ],
+  };
+}
+
+/** Long-form YouTube pipeline template (Phase 11). */
+export function youtubeLongFormTemplate(topicPlaceholder = "{{input.topic}}"): WorkflowGraph {
+  return {
+    nodes: [
+      {
+        id: "trigger",
+        type: "trigger.manual",
+        name: "Start",
+        config: {},
+        position: { x: 40, y: 180 },
+        errorStrategy: "stop_workflow",
+        maxAttempts: 1,
+      },
+      {
+        id: "script",
+        type: "video.script",
+        name: "Script",
+        config: { topic: topicPlaceholder, tone: "curious", lengthMinutes: 10 },
+        position: { x: 260, y: 180 },
+        errorStrategy: "retry_with_backoff",
+        maxAttempts: 3,
+      },
+      {
+        id: "compliance",
+        type: "video.compliance",
+        name: "Sanity Shield",
+        config: { fromNode: "script" },
+        position: { x: 480, y: 180 },
+        errorStrategy: "stop_workflow",
+        maxAttempts: 1,
+      },
+      {
+        id: "voice",
+        type: "video.voice",
+        name: "Voice",
+        config: { fromNode: "script" },
+        position: { x: 700, y: 100 },
+        errorStrategy: "retry_with_backoff",
+        maxAttempts: 2,
+      },
+      {
+        id: "broll",
+        type: "video.broll",
+        name: "B-roll",
+        config: { fromNode: "script" },
+        position: { x: 700, y: 280 },
+        errorStrategy: "continue",
+        maxAttempts: 2,
+      },
+      {
+        id: "assemble",
+        type: "video.assemble",
+        name: "Assemble",
+        config: { scriptNode: "script", voiceNode: "voice", brollNode: "broll" },
+        position: { x: 920, y: 180 },
+        errorStrategy: "retry_with_backoff",
+        maxAttempts: 2,
+      },
+      {
+        id: "upload",
+        type: "youtube.upload",
+        name: "Upload",
+        config: { assembleNode: "assemble", scriptNode: "script", privacyStatus: "private" },
+        position: { x: 1140, y: 180 },
+        errorStrategy: "stop_workflow",
+        maxAttempts: 2,
+      },
+      {
+        id: "return",
+        type: "output.return",
+        name: "Return",
+        config: { fromNode: "upload" },
+        position: { x: 1360, y: 180 },
+        errorStrategy: "stop_workflow",
+        maxAttempts: 1,
+      },
+    ],
+    edges: [
+      { id: "e1", source: "trigger", target: "script" },
+      { id: "e2", source: "script", target: "compliance" },
+      { id: "e3", source: "compliance", target: "voice" },
+      { id: "e4", source: "compliance", target: "broll" },
+      { id: "e5", source: "voice", target: "assemble" },
+      { id: "e6", source: "broll", target: "assemble" },
+      { id: "e7", source: "assemble", target: "upload" },
+      { id: "e8", source: "upload", target: "return" },
     ],
   };
 }

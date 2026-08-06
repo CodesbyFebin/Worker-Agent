@@ -19,6 +19,9 @@ export const QUEUE_NAMES = {
   CAMPAIGN_DAY: "campaign-day",
   SCHEDULED_PUBLISH: "scheduled-publish",
   WORKFLOW_STEP: "workflow-step",
+  PYTHON_TRANSCRIPTION: "python-transcription",
+  PYTHON_AUDIO_ANALYSIS: "python-audio-analysis",
+  PYTHON_THUMBNAIL_SCORE: "python-thumbnail-score",
 } as const;
 
 const DEFAULT_JOB_OPTS = {
@@ -32,6 +35,9 @@ export const godMachineChainQueue = new Queue(QUEUE_NAMES.GOD_MACHINE_CHAIN, { c
 export const campaignDayQueue = new Queue(QUEUE_NAMES.CAMPAIGN_DAY, { connection });
 export const scheduledPublishQueue = new Queue(QUEUE_NAMES.SCHEDULED_PUBLISH, { connection });
 export const workflowStepQueue = new Queue(QUEUE_NAMES.WORKFLOW_STEP, { connection });
+export const pythonTranscriptionQueue = new Queue(QUEUE_NAMES.PYTHON_TRANSCRIPTION, { connection });
+export const pythonAudioAnalysisQueue = new Queue(QUEUE_NAMES.PYTHON_AUDIO_ANALYSIS, { connection });
+export const pythonThumbnailScoreQueue = new Queue(QUEUE_NAMES.PYTHON_THUMBNAIL_SCORE, { connection });
 
 export function enqueue<T>(queue: Queue<T>, name: string, data: T, opts?: { delayMs?: number }) {
   // BullMQ's Queue<Data, Result, Name> generics make free-form job names awkward.
@@ -72,6 +78,9 @@ export function registerWorker<T>(
       [QUEUE_NAMES.CAMPAIGN_DAY]: campaignDayQueue,
       [QUEUE_NAMES.SCHEDULED_PUBLISH]: scheduledPublishQueue,
       [QUEUE_NAMES.WORKFLOW_STEP]: workflowStepQueue,
+      [QUEUE_NAMES.PYTHON_TRANSCRIPTION]: pythonTranscriptionQueue,
+      [QUEUE_NAMES.PYTHON_AUDIO_ANALYSIS]: pythonAudioAnalysisQueue,
+      [QUEUE_NAMES.PYTHON_THUMBNAIL_SCORE]: pythonThumbnailScoreQueue,
     };
     const job = await queueMap[queueName]?.getJob(jobId);
     if (!job) return;
@@ -117,6 +126,9 @@ export async function shutdownQueues(): Promise<void> {
     campaignDayQueue.close(),
     scheduledPublishQueue.close(),
     workflowStepQueue.close(),
+    pythonTranscriptionQueue.close(),
+    pythonAudioAnalysisQueue.close(),
+    pythonThumbnailScoreQueue.close(),
   ]);
   await (connection as IORedis).quit();
 }

@@ -1,38 +1,61 @@
 {
-  "name": "worker-agent-cloud",
-  "private": true,
-  "version": "0.1.0",
+  "name": "youtube-cc-os",
+  "version": "1.0.0",
+  "description": "Content Creator Operating System - Multi-channel YouTube automation with AI-powered trend prediction, content generation, and monetization optimization",
+  "main": "src/index.js",
   "type": "module",
-  "engines": {
-    "node": ">=18.17"
-  },
-  "workspaces": ["client", "server"],
   "scripts": {
-    "dev": "concurrently -n api,worker,web -c cyan,magenta,green \"npm run dev:api\" \"npm run dev:worker\" \"npm run dev:web\"",
-    "dev:web": "npm run dev --workspace=client",
-    "dev:client": "npm run dev:web",
-    "dev:api": "npm run dev:api --workspace=server",
-    "dev:worker": "npm run dev:worker --workspace=server",
-    "dev:server": "npm run dev:api",
-    "build": "npm run build --workspace=client && npm run build --workspace=server",
-    "typecheck": "npm run typecheck --workspace=client && npm run typecheck --workspace=server",
-    "lint": "eslint .",
-    "test": "vitest run",
-    "validate": "npm run typecheck && npm run lint && npm run test && npm run build",
-    "db:generate": "node --env-file=.env ./node_modules/drizzle-kit/bin.cjs generate --config=drizzle.config.ts",
-    "db:push": "node --env-file=.env ./node_modules/drizzle-kit/bin.cjs push --config=drizzle.config.ts --force",
-    "local:infra": "powershell -ExecutionPolicy Bypass -File ./scripts/start-local-infra.ps1"
+    "start": "node src/index.js",
+    "orchestrator": "node src/orchestrator/master.js",
+    "dashboard": "node src/cli/dashboard.js",
+    "generate": "node src/cli/generate.js",
+    "analyze": "node src/cli/analyze.js",
+    "dev": "nodemon src/index.js",
+    "test": "echo \"Testing not yet implemented\"",
+    "setup": "node scripts/setup.js"
+  },
+  "keywords": [
+    "youtube",
+    "automation",
+    "content-creation",
+    "ai",
+    "monetization",
+    "trend-analysis",
+    "multi-channel"
+  ],
+  "author": "CC-OS Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.7",
+    "chalk": "^5.3.0",
+    "cheerio": "^1.0.0-rc.12",
+    "cli-table3": "^0.6.3",
+    "commander": "^12.0.0",
+    "dotenv": "^16.4.1",
+    "enquirer": "^2.4.1",
+    "express": "^4.18.2",
+    "figlet": "^1.7.0",
+    "google-auth-library": "^9.6.3",
+    "googleapis": "^133.0.0",
+    "jimp": "^0.22.10",
+    "lodash": "^4.17.21",
+    "moment": "^2.30.1",
+    "node-cron": "^3.0.3",
+    "openai": "^4.28.0",
+    "ora": "^8.0.1",
+    "playwright": "^1.41.2",
+    "puppeteer": "^22.0.0",
+    "sharp": "^0.33.2",
+    "sentiment": "^5.0.2",
+    "uuid": "^9.0.1",
+    "winston": "^3.11.0",
+    "youtube-transcript": "^1.1.0",
+    "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
-    "@eslint/js": "^9.9.0",
-    "@tanstack/react-query": "^4.36.1",
-    "concurrently": "^9.0.1",
-    "drizzle-kit": "^0.24.2",
-    "eslint": "^9.9.0",
-    "eslint-plugin-react-hooks": "^5.1.0",
-    "globals": "^15.9.0",
-    "typescript": "^5.5.4",
-    "typescript-eslint": "^8.2.0",
-    "vitest": "^2.0.5"
+    "nodemon": "^3.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

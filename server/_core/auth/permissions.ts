@@ -25,6 +25,9 @@ export const PERMISSIONS = [
   "artifact:read",
   "artifact:write",
   "ops:recover",
+  "youtube:read",
+  "youtube:write",
+  "youtube:publish",
   "settings:read",
   "settings:write",
   "audit:read",
@@ -56,6 +59,9 @@ export const ROLE_PERMISSION_MAP: Record<"owner" | "admin" | "member" | "viewer"
     "approval:decide",
     "artifact:read",
     "artifact:write",
+    "youtube:read",
+    "youtube:write",
+    "youtube:publish",
     "settings:read",
   ],
   viewer: [
@@ -68,6 +74,7 @@ export const ROLE_PERMISSION_MAP: Record<"owner" | "admin" | "member" | "viewer"
     "workflow:read",
     "approval:read",
     "artifact:read",
+    "youtube:read",
     "settings:read",
   ],
 };

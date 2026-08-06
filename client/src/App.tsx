@@ -12,6 +12,7 @@ import { GodMachineWorkspace } from "./features/god-machine/GodMachineWorkspace"
 import { IdeWorkspace } from "./features/idea-ide/IdeWorkspace";
 import { ContentOpsStudio } from "./features/youtube-automode/ContentOpsStudio";
 import { VideoAutopilotWorkspace } from "./features/youtube-automode/VideoAutopilotWorkspace";
+import { YoutubeStudioWorkspace } from "./features/youtube-studio/YoutubeStudioWorkspace";
 import { OverviewWorkspace } from "./features/overview/OverviewWorkspace";
 import { LearnWorkspace } from "./features/learn/LearnWorkspace";
 import { PluginsWorkspace } from "./features/plugins/PluginsWorkspace";
@@ -63,6 +64,8 @@ function renderWorkspace(active: WorkspaceId) {
     case "youtube-automode":
     case "youtube":
       return <VideoAutopilotWorkspace />;
+    case "youtube-studio":
+      return <YoutubeStudioWorkspace />;
     case "shorts-reels":
       return <ContentOpsStudio focus="studio" />;
     case "research":

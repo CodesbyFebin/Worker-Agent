@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "youtube": {
+      "command": "npx",
+      "args": ["-y", "@jcodesmore/youtube-for-ai-agents"]
+    }
+  }
+}

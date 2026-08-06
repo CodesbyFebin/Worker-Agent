@@ -42,6 +42,14 @@ const envSchema = z
 
     YOUTUBE_ACCESS_TOKEN: z.string().optional(),
     YOUTUBE_CHANNEL_ID: z.string().optional(),
+    /** Optional Data API key for trend search (no upload). */
+    YOUTUBE_API_KEY: z.string().optional(),
+    /** Royalty-free B-roll — https://www.pexels.com/api/ */
+    PEXELS_API_KEY: z.string().optional(),
+    /** Optional paid TTS; falls back to StreamElements when unset. */
+    ELEVENLABS_API_KEY: z.string().optional(),
+    ELEVENLABS_VOICE_ID: z.string().optional(),
+    CARTESIA_API_KEY: z.string().optional(),
     TIKTOK_ACCESS_TOKEN: z.string().optional(),
     INSTAGRAM_ACCESS_TOKEN: z.string().optional(),
     INSTAGRAM_BUSINESS_ACCOUNT_ID: z.string().optional(),
@@ -61,6 +69,12 @@ const envSchema = z
     SERPER_API_KEY: z.string().optional(),
 
     REDIS_URL: z.string().default("redis://localhost:6379"),
+
+    /** Python FastAPI bridge base URL for heavy AI/ML tasks. */
+    PYTHON_API_URL: z.string().default("http://localhost:8000"),
+
+    /** BullMQ queue prefix for the Python RQ worker, if used. */
+    PYTHON_QUEUE_PREFIX: z.string().optional(),
 
     GOD_MACHINE_REPO_ROOT: z.string().optional(),
 

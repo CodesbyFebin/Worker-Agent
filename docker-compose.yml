@@ -116,7 +116,46 @@ services:
       api:
         condition: service_healthy
 
+  python-api:
+    build:
+      context: services/python-api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - ./output:/app/output
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - default
+
+  python-worker:
+    build:
+      context: services/python-worker
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - ./output:/app/output
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - default
+    deploy:
+      replicas: 2
+
 volumes:
   mysql_data:
   redis_data:
   minio_data:
+  python_cache:

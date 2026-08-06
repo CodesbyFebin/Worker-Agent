@@ -305,7 +305,7 @@ export function NodePalette({ disabled }: { disabled?: boolean }) {
   return (
     <div className="space-y-3 overflow-y-auto p-3">
       <p className="text-[10px] uppercase tracking-widest text-[var(--color-text-muted)]">Node library</p>
-      {(["trigger", "logic", "agent", "human", "output"] as const).map((cat) => (
+      {(["trigger", "logic", "agent", "human", "youtube", "output"] as const).map((cat) => (
         <div key={cat}>
           <p className="mb-1 text-[10px] font-semibold uppercase text-[var(--color-teal)]">{cat}</p>
           <div className="space-y-1">

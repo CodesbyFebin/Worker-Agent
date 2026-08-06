@@ -1225,3 +1225,108 @@ export const deadLetterJobs = mysqlTable(
     createdIdx: index("dead_letter_jobs_created_at_idx").on(table.createdAt),
   }),
 );
+
+/* -------------------------------------------------------------------------
+ * Phase 11 — YouTube Automation Studio (org = channel factory tenant)
+ * ---------------------------------------------------------------------- */
+
+export const youtubeVideoStatusEnum = [
+  "draft",
+  "scripted",
+  "rendering",
+  "compliance_hold",
+  "scheduled",
+  "uploading",
+  "uploaded",
+  "live",
+  "failed",
+] as const;
+
+export const youtubeChannels = mysqlTable(
+  "youtube_channels",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    organizationId: varchar("organization_id", { length: 36 })
+      .notNull()
+      .references(() => organizations.id),
+    channelName: varchar("channel_name", { length: 255 }).notNull(),
+    /** YouTube channel id (UC…) when known */
+    youtubeChannelId: varchar("youtube_channel_id", { length: 64 }),
+    /**
+     * Env var names holding OAuth secrets — never store raw tokens here
+     * (matches credential_refs pattern). Per-channel keys enable 10 isolated
+     * channels without fingerprinting one shared token.
+     */
+    accessTokenEnvKey: varchar("access_token_env_key", { length: 128 }).notNull(),
+    refreshTokenEnvKey: varchar("refresh_token_env_key", { length: 128 }),
+    timezone: varchar("timezone", { length: 64 }).notNull().default("UTC"),
+    /** Distinct UA string for API calls (anti-fingerprint). */
+    userAgent: varchar("user_agent", { length: 512 }),
+    isActive: boolean("is_active").notNull().default(true),
+    niche: varchar("niche", { length: 255 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    orgIdx: index("youtube_channels_organization_id_idx").on(table.organizationId),
+    activeIdx: index("youtube_channels_is_active_idx").on(table.isActive),
+    ytIdIdx: index("youtube_channels_youtube_channel_id_idx").on(table.youtubeChannelId),
+  }),
+);
+
+export const youtubeVideos = mysqlTable(
+  "youtube_videos",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    organizationId: varchar("organization_id", { length: 36 })
+      .notNull()
+      .references(() => organizations.id),
+    channelId: varchar("channel_id", { length: 36 })
+      .notNull()
+      .references(() => youtubeChannels.id, { onDelete: "cascade" }),
+    workflowRunId: varchar("workflow_run_id", { length: 36 }).references(() => workflowRuns.id),
+    youtubeVideoId: varchar("youtube_video_id", { length: 64 }),
+    title: varchar("title", { length: 255 }).notNull(),
+    description: text("description"),
+    topic: varchar("topic", { length: 512 }),
+    localVideoPath: text("local_video_path"),
+    thumbnailPath: text("thumbnail_path"),
+    status: mysqlEnum("youtube_video_status", youtubeVideoStatusEnum).notNull().default("draft"),
+    views: int("views").notNull().default(0),
+    /** Average view duration ratio 0–1 when known from Analytics API */
+    avgViewDuration: decimal("avg_view_duration", { precision: 5, scale: 4 }),
+    scheduledAt: timestamp("scheduled_at"),
+    uploadedAt: timestamp("uploaded_at"),
+    complianceNotes: text("compliance_notes"),
+    errorMessage: text("error_message"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  },
+  (table) => ({
+    orgIdx: index("youtube_videos_organization_id_idx").on(table.organizationId),
+    channelIdx: index("youtube_videos_channel_id_idx").on(table.channelId),
+    statusIdx: index("youtube_videos_status_idx").on(table.status),
+    runIdx: index("youtube_videos_workflow_run_id_idx").on(table.workflowRunId),
+  }),
+);
+
+export const youtubeTrends = mysqlTable(
+  "youtube_trends",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    organizationId: varchar("organization_id", { length: 36 })
+      .notNull()
+      .references(() => organizations.id),
+    query: varchar("query", { length: 512 }).notNull(),
+    /** Redacted JSON array of search hits */
+    resultsJson: text("results_json").notNull(),
+    source: varchar("source", { length: 64 }).notNull().default("youtube_data_api"),
+    fetchedAt: timestamp("fetched_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    orgIdx: index("youtube_trends_organization_id_idx").on(table.organizationId),
+    queryIdx: index("youtube_trends_query_idx").on(table.query),
+    fetchedIdx: index("youtube_trends_fetched_at_idx").on(table.fetchedAt),
+  }),
+);

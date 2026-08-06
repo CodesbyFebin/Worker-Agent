@@ -17,6 +17,7 @@ import {
   Workflow,
   MonitorSmartphone,
   CalendarClock,
+  Film,
   ChevronLeft,
   Plug,
   Library,
@@ -41,6 +42,7 @@ export type WorkspaceId =
   | "god-machine"
   | "idea-ide"
   | "youtube-automode"
+  | "youtube-studio"
   | "overview"
   | "workspace"
   | "automations"
@@ -75,6 +77,7 @@ const PLATFORM: NavItem[] = [
   { id: "god-machine", label: "God Machine", icon: Workflow },
   { id: "idea-ide", label: "IDEa IDE", icon: MonitorSmartphone },
   { id: "youtube-automode", label: "YouTube Autopilot", icon: CalendarClock },
+  { id: "youtube-studio", label: "YT Studio", icon: Film },
 ];
 
 const CONTENT_OPS: NavItem[] = [
@@ -110,6 +113,7 @@ const FULL_BLEED: WorkspaceId[] = [
   "god-machine",
   "claim-ledger",
   "youtube-automode",
+  "youtube-studio",
   "shorts-reels",
   "youtube",
   "research",

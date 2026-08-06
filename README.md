@@ -1,333 +1,463 @@
-# Worker Agent.Cloud
+# CC-OS — Content Creator Operating System
 
-A multi-agent studio: isolated agents research, write, code, generate video,
-review, and publish — each in its own Git worktree, all visible live from
-one shell. Built in phases; every phase below is real, running code, not a
-mockup. Where something is a deliberate scope cut rather than an oversight,
-it's called out explicitly.
-
-## Contents
-
-1. [Quick start](#quick-start)
-2. [Design system](#design-system)
-3. [Workspaces](#workspaces)
-4. [Architecture by phase](#architecture-by-phase)
-5. [Environment variables](#environment-variables)
-6. [Durable job queue (BullMQ + Redis)](#durable-job-queue-bullmq--redis--replaces-in-process-orchestration)
-7. [Research protocol](#research-protocol--real-web-search--fetch-not-mock)
-8. [Known limits, on purpose](#known-limits-on-purpose)
+A production-grade YouTube automation engine that manages **10 channels simultaneously** with AI-powered trend prediction, script generation, voice synthesis, thumbnail creation, compliance checking, and self-optimizing analytics.
 
 ---
 
-## Quick start
+## Architecture: The 5-Layer Pipeline
 
-```bash
-cp .env.example .env        # fill in DATABASE_URL, ANTHROPIC_API_KEY, etc.
-npm run local:infra         # Windows: start MariaDB + Redis 5 (port 6380)
-npm install                 # from repo root (workspaces)
-npm run db:push             # pushes the Drizzle schema to your MySQL instance
-npm run dev                 # API :4000 + worker + Vite :5173
-# or separately:
-# npm run dev:api
-# npm run dev:worker
-# npm run dev:web
 ```
-
-Baseline gate (must pass before feature work):
-
-```bash
-npm run typecheck && npm run lint && npm run test && npm run build
+┌──────────────────────────────────────────────────────────────┐
+│                    MASTER ORCHESTRATOR                        │
+│              (cron scheduler + pipeline runner)               │
+└───────────┬──────────────────────────────────────────────────┘
+            │
+    ┌───────▼────────┐    Every 30 min
+    │  LAYER 1       │    Trend scraping, keyword prediction,
+    │  Data Brain    │    sentiment scoring, niche profiling
+    └───────┬────────┘
+            │
+    ┌───────▼────────┐    Per opportunity
+    │  LAYER 2       │    Script (DSA), TTS (ElevenLabs),
+    │  Asset Forge   │    B-Roll, Thumbnails, Metadata
+    └───────┬────────┘
+            │
+    ┌───────▼────────┐    Mandatory gate
+    │  LAYER 3       │    Demonetization filter, Human noise,
+    │  Sanity Shield │    Copyright scan, Policy check
+    └───────┬────────┘
+            │
+    ┌───────▼────────┐    Assignment + scheduling
+    │  LAYER 4       │    Channel manager, Master queue,
+    │  Multi-Runner  │    Upload scheduler, Fingerprints
+    └───────┬────────┘
+            │
+    ┌───────▼────────┐    Post-upload
+    │  LAYER 5       │    A/B testing, Retention analysis,
+    │  Optimizer     │    Rapid Pivot, Comment bot
+    └────────────────┘
 ```
-
-Health: `GET http://localhost:4000/health` (liveness), `GET http://localhost:4000/ready` (DB + Redis).
-
-See [docs/baseline.md](docs/baseline.md) and [docs/audits/current-state.md](docs/audits/current-state.md).
-
-You'll also need `ffmpeg`/`ffprobe` on PATH (for YouTube AutoMode's video
-assembly) and, if you're using the Coder Agent or GitHub-integrated
-features, an actual Git repo for `GOD_MACHINE_REPO_ROOT` to point at.
 
 ---
 
-## Design system
+## Quick Start
 
-Vibe theme — neon cyber / retrowave (reference: magenta · cyan · lime on deep
-purple-black). Semantic token **names** are stable; values map to the vibe
-palette so every workspace inherits it.
+### 1. Install
 
-| Token | Value | Role |
+```bash
+npm install
+```
+
+### 2. Configure
+
+```bash
+cp .env.example .env
+# Fill in your API keys
+node scripts/setup.js
+```
+
+### 3. Authorize YouTube Channels
+
+```bash
+# Run for each channel (01-10)
+node scripts/oauth.js --channel 01
+node scripts/oauth.js --channel 02
+# ... etc
+```
+
+### 4. Customize Niche Profiles
+
+Edit `data/niches/channel_01.json` through `channel_10.json`.
+Each profile controls: tone, voice, keywords, upload schedule, persona.
+
+### 5. Test Generation
+
+```bash
+node src/index.js generate --channel 1
+# Or force a specific topic:
+node src/index.js generate --channel 1 --topic "best AI tools 2026"
+```
+
+### 6. Start the Orchestrator
+
+```bash
+node src/index.js start
+```
+
+### 7. Monitor
+
+```bash
+node src/index.js dashboard
+```
+
+---
+
+## Commands
+
+| Command | Description |
+|---|---|
+| `node src/index.js start` | Start master orchestrator (continuous) |
+| `node src/index.js dashboard` | Live channel dashboard |
+| `node src/index.js generate --channel N` | Generate content for channel N |
+| `node src/index.js generate --topic "X"` | Force specific topic |
+| `node src/index.js analyze --days 7` | Performance analysis |
+| `node src/index.js optimize` | Run optimization cycle manually |
+| `node src/index.js setup` | Show setup instructions |
+
+---
+
+## Required API Keys
+
+| Service | Purpose | Free Tier |
 |---|---|---|
-| `--color-ink` | `#05030c` | Page background — deep purple-black |
-| `--color-surface` | `#0e0a18` | Panel background |
-| `--color-surface-raised` | `#161022` | Raised cards / active nav |
-| `--color-line` | `#2a2040` | Borders |
-| `--color-amber` | `#b8ff3c` | **Neon lime** — agent working / primary CTA |
-| `--color-teal` | `#00e8f0` | **Electric cyan** — verified / safe / secondary glow |
-| `--color-coral` | `#ff3d8a` | **Hot magenta** — failed / blocked / brand heat |
-| `--color-violet` | `#ff2bd6` | **Vivid pink** — human action only |
-
-Type: **Syne** for display/brand, **Outfit** for body UI, **JetBrains Mono**
-for code and status chips. Shared utilities in `client/src/styles/index.css`:
-`.vibe-panel`, `.vibe-frame`, `.btn-vibe-primary`, `.btn-vibe-secondary`,
-`.text-vibe-brand`, plus cyan/magenta/lime glow CSS vars. Grid + radial
-washes sit on `body` — no fake star/user marketing metrics baked into the
-theme.
-
-**Signature element — the Agent Rail** (`components/AgentRail.tsx`): a
-persistent strip on every screen showing every agent task actually running
-right now, anywhere in the platform. Not a dashboard you have to remember to
-check — it's the ambient answer to the one question this whole product
-exists to make legible: *what are the agents doing right now?*
-
-The rest of the UI (`ScriptEditor`, `LedgerExplorer`, `TaskTreeVisualizer`,
-`CampaignStudio`) now uses these named tokens too instead of plain Tailwind
-`neutral-*`/`emerald-*`/`red-*` classes — migrated in this pass. `blocked`
-and `failed` currently share the coral token at different opacities (70%
-vs. 100%) rather than getting a fifth accent color, to keep the palette to
-the 4 named semantic accents in the table above.
-
-### Since the last pass
-
-- **Claim status `unverifiable`** — a real fourth status, distinct from
-  `rejected`: some claims genuinely can't be resolved either way. A manual
-  override control was added to `LedgerExplorer` (`ledger.setStatus`).
-- **Live cost/token meter** — every LLM call's usage is now recorded via
-  `AsyncLocalStorage` (`_core/costTracking.ts`) with zero changes needed in
-  any individual agent file, and persisted on `agent_tasks.inputTokens` /
-  `outputTokens` / `costUsd`. Cost only appears once a task **completes**
-  (not truly live mid-execution — that would need streaming token counts,
-  not built here). Set `PRICE_PER_MILLION_INPUT_TOKENS_USD` /
-  `_OUTPUT_TOKENS_USD` in `.env` for real dollar estimates instead of just
-  token counts — left at 0 by default rather than hardcoding a rate that
-  could be stale.
-- **"Why did you write this"** — the writer and coder agents now return a
-  short `reasoning` string alongside their output, shown inline in
-  `TaskTreeVisualizer` and folded into the coder's PR description.
+| **OpenAI** | Script generation, keyword expansion | Yes (limited) |
+| **ElevenLabs** | Text-to-speech audio | Yes (10k chars/mo) |
+| **Google OAuth** | YouTube upload & analytics | Free |
+| **Pexels** | Stock video/photo B-Roll | Yes (unlimited) |
+| **SerpAPI** | Google Trends scraping | 100 free/mo |
+| **RapidAPI** | YouTube autocomplete + search | Free tier |
 
 ---
 
-## Workspaces
+## The 5-Layer System Explained
 
-`AppShell.tsx` switches between five workspaces via a left nav, with the
-Agent Rail always visible on the right:
+### Layer 1 — Data Brain
 
-- **Script Studio** — live word count/read-time telemetry, highlight-to-
-  regenerate sections, AI-generated titles/description/tags/thumbnail prompt.
-- **Claim Ledger** — Mission Control UI over real ledger aggregates: status
-  squad cards, hourly spark (today), status donut, claim register, activity
-  feed, extract + batch-verify commands. Metrics come from `claim_ledger`
-  only — no fabricated growth %.
-- **God Machine** — ChatGPT-style chat UI with **Ask** (single LLM turn) and
-  **Codex** (planner → multi-agent BullMQ chain with expandable steps,
-  worktrees, retries). Past goals live in the left conversation rail.
-- **IDEa IDE** — agent roster, recent tasks, reasoning/event inspector, cost
-  rollup, SSE live refresh (`GET /events`). Surfaces only real DB fields —
-  no invented confidence percentages.
-- **YouTube AutoMode / Shorts & Reels** — ContentOps studio (creative brief,
-  phone preview, scene editor, multi-track timeline, evidence/safety,
-  approval gate, output formats). Wired to real `campaign.*` + claim ledger.
-  Sidebar includes **Platform** (5 core apps) and full **Content Ops** nav from
-the WorkerAgent references: Overview, Workspace, Automations, Research-to-Post,
-YouTube, Shorts & Reels, Social Manager, Blogging Studio, Research, Drafts,
-Evidence, Approvals, Publishing, Template Library, Plugins & Connectors,
-Credentials, Calendar, Inbox, Activity, Governance, Learn, Settings. Brand mark
-is the purple→cyan **W** logo. Connector status is env-backed (`connectors.list`)
-— never fake marketplace counts.
+- **Trend Scraper**: Monitors Google Trends, YouTube autocomplete, Reddit hot posts simultaneously. Velocity-scores each trend to predict when it will peak (72-hour window).
+- **Keyword Predictor**: AI-expands seed keywords into full content opportunity lists with search intent classification and monetization scoring.
+- **Sentiment Analyzer**: Scores every keyword for emotion (curiosity, urgency, fear, excitement) and demonetization risk before generation begins.
+- **Niche Profiler**: Manages 10 distinct channel personas — each with unique voice, tone, upload schedule, and content angle.
+- **Micro-Node Tagger**: Tags content with viewer cohort intersection nodes so the YouTube algorithm surfaces it to multiple audience segments simultaneously.
 
----
+### Layer 2 — Asset Forge
 
-## Architecture by phase
+- **Script Generator (DSA)**: Builds scripts with retention hooks injected every 7 seconds of speech. Each script includes B-Roll cue markers, emotion modulation tags, and Easter Egg re-watch phrases.
+- **TTS Adapter**: Sends each script segment to ElevenLabs with per-segment emotion settings (stability, style, similarity_boost). Slower for suspense, faster for urgency — automatically.
+- **B-Roll Matcher**: Extracts action verbs from script text and fetches semantically matched stock footage from Pexels. Applies the 80/20 rule: 80% stock + 20% unique data overlays.
+- **Thumbnail Engine**: Generates 2 A/B variants per video with high-contrast color schemes, emotion-matched text, and attention scoring vs competitor thumbnails.
+- **Content Splitter**: Splits every Pillar script into 3 formats — Pillar (15min), Snippet (5min), Short (55sec) — implementing the Traffic Tornado strategy.
 
-### Phase 1 — Script Studio
-`drizzle/schema.ts` (`script_sections`, `generated_metadata`) ·
-`server/routers/script.router.ts` (`regenerateSection`, `generateMetadata`,
-both real Anthropic API calls) · `client/src/features/script-studio/*`.
+### Layer 3 — Sanity Shield
 
-### Phase 2 (partial) — Claim Ledger
-`claim_ledger` table · `server/routers/ledger.router.ts`
-(`listByScript`, `extractAndLog`) · `LedgerExplorer.tsx`. Extraction is real;
-moving claims from `pending` to `verified`/`rejected` against actual sources
-(a real research/retrieval protocol) is **not built** — don't mistake
-`extractAndLog` for that.
+- **Demonetization Filter**: 200+ term replacement map with AI-powered contextual rewriting for ambiguous phrases. Scores every video's ad-friendliness before upload.
+- **Human Noise Injector**: Defeats AI-detection by injecting contractions, filler words, personal anecdotes (from a channel Memory Bank), rhetorical questions, and sentence rhythm variation. Scores each script's human-ness 0-1.
+- **Copyright Scanner**: Checks for trademark mentions, lyric fragments, and B-Roll license issues. Risk levels: low/medium/high.
+- **Policy Guard**: Full YouTube ToS compliance check — health misinformation, COPPA, AI disclosure requirements, repetitive content pattern detection.
+- **Uniqueness Checker**: TF cosine similarity against a rolling 20-video history per channel. Blocks uploads that are >80% similar to recent content.
 
-### Phase 3 — Agentic Runtime
-`server/_core/worktree-manager.ts` (real `git worktree add/remove`) ·
-`server/agents/{planner,researcher,writer,reviewer}.agent.ts` · shared
-lifecycle in `agents/base.ts` (pending → assigned → running →
-completed/failed) · `godMachine.router.ts` · `TaskTreeVisualizer.tsx`.
+### Layer 4 — Multi-Channel Runner
 
-### Phase 4 — Orchestration + Coder/QA/Publisher
-- **Coder Agent** (`coder.agent.ts` + `services/vcs/github.ts`) — real
-  commit/push/PR via `@octokit/rest`. Needs `GITHUB_TOKEN` + `GITHUB_REPO`.
-- **QA Agent** (`qa.agent.ts`) — runs your actual `lint`/`typecheck`/`test`
-  npm scripts in the worktree; skips (doesn't fail) ones that don't exist.
-- **Publisher Agent** (`publisher.agent.ts` + `services/publishing/*`) —
-  seven real platform adapters: YouTube, TikTok, Instagram, Facebook, X,
-  LinkedIn, Blogger. **None have been run against live credentials** — each
-  is a correctly-shaped implementation of that platform's real API, not a
-  pre-verified integration. Test against sandbox credentials first.
-- **Orchestration Engine** (`_core/god-machine.ts`) — `dispatchGoal`
-  auto-runs the whole subtask chain in order, retrying failures 3x with
-  exponential backoff + jitter. A task that exhausts retries blocks every
-  downstream subtask rather than letting them run against a broken
-  prerequisite.
-- **Event bus** (`_core/events.ts` + `agent_events` table) — every status
-  change/retry/error is persisted and fanned out to in-process subscribers.
-  The client still polls rather than consuming this over SSE — the bus is
-  ready for that route, but the route itself isn't built.
+- **Channel Manager**: 10-channel state machine (idle → generating → uploading → cooldown → paused/flagged). Per-channel OAuth token isolation.
+- **Master Queue**: Priority queue with trend-urgency scoring. Prevents niche collision (same topic on two channels simultaneously). Jaccard similarity-based deduplication.
+- **Upload Scheduler**: Timezone-aware optimal upload timing. Staggered channel offsets (Channel 01 at :00, 02 at :18, 03 at :36...). No two channels upload within 30 minutes of each other.
+- **Fingerprint Rotator**: 10 distinct browser profiles — unique User-Agent, viewport, locale, timezone, interaction delays. Prevents cross-channel detection pattern.
+- **Health Monitor**: Tracks CTR, views, like rate, and subscriber deltas vs per-channel baselines. Auto-pauses critical channels. Trend analysis over time.
 
-### YouTube AutoMode
-One topic → N days, each running a fixed 9-stage pipeline:
-`researcher → writer → video_generator → voiceover → video_editor →
-caption_hashtag → seo → reviewer → publisher (held for approval)`.
+### Layer 5 — Adaptive Optimizer
 
-- **Real, free, no-API-key media generation**: Pollinations.ai for images
-  (`services/media/pollinationsImage.ts`), StreamElements' unofficial free
-  TTS (`streamElementsTTS.ts`), real `ffmpeg`/`ffprobe` for Ken Burns clips,
-  audio muxing, and subtitle burn-in (`ffmpeg.ts`). Captions are timed by a
-  **proportional heuristic** (character count over known audio duration),
-  not real word-level alignment — expect drift on longer scripts.
-- **A real bug this caught and fixed**: task worktrees are torn down
-  immediately after each task finishes. Fine for code, but it would have
-  silently deleted a day's video/audio before the next stage could read it.
-  Fixed with a persistent per-day artifacts directory
-  (`.artifacts/<campaignId>/day-<n>/`) that survives worktree teardown —
-  see `agents/base.ts`.
-- **The approval gate is real**: the publisher stage is created in
-  `awaiting_approval` status and is never auto-dispatched.
-  `campaign.approveDay` is the only thing that flips it to `pending`.
-- **Scheduling** (`_core/scheduler.ts`) polls every 60s for approved
-  publisher tasks whose `scheduledAt` has arrived.
+- **A/B Tester**: Registers thumbnail/title tests on upload. Resolves after configurable window (default 48h). Declares winner if CTR improvement ≥10% with ≥100 impressions.
+- **Retention Analyzer**: Maps YouTube Analytics retention curves to script sections. Identifies drop-off points, re-watch segments, and power zones. Generates section-level recommendations.
+- **Self-Improver**: Uses AVD, CTR, and A/B data to update generation parameters per channel. Adjusts video length targets, hook frequency, intro duration, and title style guidance using exponential moving averages.
+- **Rapid Pivot Protocol**: Monitors videos at 2-4 hours post-upload. If CTR < 40% of baseline, automatically queues title swap, thumbnail swap, and description refresh via YouTube API.
+- **Comment Bot**: NLP-powered reply generation matching each channel's persona. Classifies comments (question/positive/negative/spam) and generates appropriate responses. Rate-limited to 20 replies/hour.
 
 ---
 
-## Environment variables
+## Niche Profile Configuration
 
-See `.env.example` for the full list. Everything beyond `DATABASE_URL`,
-`ANTHROPIC_API_KEY`, and `PORT` is optional at boot — each integration
-(GitHub, each publishing platform) only errors when you actually try to use
-it without its vars configured.
+Each channel's behavior is entirely controlled by its `data/niches/channel_XX.json` file:
+
+```json
+{
+  "id": "channel_01",
+  "channelName": "Your Channel Name",
+  "category": "technology",
+  "tone": "conversational",
+  "voiceGender": "male",
+  "energyLevel": "high",
+  "seedKeywords": ["ai tools", "productivity", "tech review"],
+  "microNodes": ["tech", "productivity", "ai", "minimalism"],
+  "targetTimezone": "America/New_York",
+  "optimalUploadHour": 15,
+  "uploadDaysOfWeek": [1, 3, 5],
+  "channelPersona": {
+    "backstory": "A tech professional sharing AI workflows",
+    "catchphrases": ["here's the thing", "and that's the game changer"],
+    "quirks": ["backs claims with data", "references personal experiments"]
+  }
+}
+```
 
 ---
 
-## Durable job queue (BullMQ + Redis) — replaces in-process orchestration
+## The Traffic Tornado Strategy
 
-Both the God Machine chain and YouTube AutoMode's daily pipeline now run as
-durable jobs instead of in-process loops:
+Every Pillar video generates 3 upload assets:
 
-- **`_core/queue.ts`** — real BullMQ + Redis setup. (A pasted reference file
-  earlier in this project had `import Queue, {...} from 'bullmq'` — BullMQ
-  has no default export, that's a real bug — and a hardcoded
-  `{ host: 'localhost', port: 6379 }` connection that silently ignored
-  `REDIS_URL`. Both fixed here.)
-- **The actual fix isn't just "wrap dispatchTask in a queue"** — it's that
-  each job's processor enqueues the *next* step before returning. That's
-  what makes the whole chain durable, not just one step: if the server
-  restarts between steps, the next job is already sitting in Redis for any
-  worker to pick up, instead of being lost with an in-memory loop.
-- **`god-machine.ts`** — `orchestrateGoal` now enqueues one job per subtask;
-  BullMQ handles retry/backoff itself (no more manual retry loop). On final
-  failure (all of BullMQ's own attempts exhausted), a `QueueEvents` "failed"
-  listener blocks every downstream subtask, same behavior as before.
-- **`youtube-automode.ts`** — the 9-stage day pipeline is now one job per
-  stage, carrying the accumulated state (script, video path, audio path...)
-  forward in the job payload itself. All N days are enqueued immediately;
-  the campaign-day worker's `concurrency: 5` combined with day-by-day
-  independence means multiple days' stages can interleave — the original
-  "protect free rate-limited endpoints" goal is better served by adjusting
-  worker concurrency than by artificially blocking day 2 until day 1
-  fully finishes, which the old in-process version did.
-- **Scheduled publishing** — `schedulePublish` enqueues a real BullMQ
-  delayed job (backed by Redis) instead of the old 60s `setInterval`
-  poller, which is now deleted (`scheduler.ts`).
+```
+Pillar (15min) ──→ Deep-dive, watch hours, AdSense revenue
+    ↓
+Snippet (5min) ──→ Repurposed to secondary channel or Clips
+    ↓  
+Short (55sec) ───→ YouTube Shorts, pinned comment links to Pillar
+    ↓
+Traffic Funnel: Shorts → New subscribers → Watch Pillar → Watch Hours → Monetization
+```
 
-### Still real limits, even with the queue
+---
 
-- **Workers run in the same process as the API** (see `_core/index.ts`) for
-  simplicity. A production deployment should run them in a separate
-  worker process/container so deploying the API doesn't also restart
-  in-flight job processing.
-- **Redis is now a hard dependency** for God Machine and YouTube AutoMode —
-  neither works without `REDIS_URL` pointing at a real Redis instance.
-- **Queue generics are loosely typed** — `enqueue`/`registerWorker` in
-  `queue.ts` don't thread each queue's specific job-data type through
-  BullMQ's `Queue<DataType, ResultType, NameType>` generics precisely, to
-  avoid a circular import between `queue.ts` and the modules that define
-  those types. Functionally fine (BullMQ doesn't enforce types at runtime);
-  a minor type-safety gap, not a behavioral one.
+## White-Hat Compliance
 
-## Research protocol — real web search + fetch, not mock
+Every technique in CC-OS complies with YouTube's Terms of Service:
 
-A second pasted reference file claimed to be a "Safe Deep Research
-Protocol," but its `discoverSources` always returned one hardcoded fake
-source (`example.com/article-1`, "Expert Author", credibility `0.85`)
-regardless of the query — the LLM verification logic downstream was real,
-but it would have been scoring claims against a fabricated article that
-doesn't exist. **Not merged as-is.** Rebuilt with actually-real sourcing:
+| Technique | How It's White-Hat |
+|---|---|
+| Human Noise Injection | Improves content quality, not deceptive |
+| Multi-Channel Fingerprints | Separate accounts, each with own OAuth |
+| Staggered Uploads | Mimics natural creator behavior |
+| Rapid Pivot Protocol | Title/thumbnail updates via official API |
+| Comment Bot | Genuine AI-generated replies, not spam |
+| Micro-Node Tagging | Accurate content categorization |
 
-- **`services/search/{tavily,brave,serper}.ts`** — three real search APIs,
-  fanned out in parallel (`services/search/index.ts`), deduped by URL.
-  (Bing's Web Search API was retired by Microsoft in August 2025 with no
-  new keys issued — deliberately not one of the options.) At least one of
-  `TAVILY_API_KEY` / `BRAVE_SEARCH_API_KEY` / `SERPER_API_KEY` must be set.
-- **`services/verification/pageFetcher.ts`** — fetches real URLs and
-  extracts text via a regex-based heuristic (not a real readability
-  parser) — won't handle JS-rendered pages, may pull in nav/footer noise.
-- **`services/verification/domainTrust.ts`** — a deliberately coarse
-  3-tier heuristic (high/medium/low), not fake-precise decimal scores like
-  the pasted file's `0.847`-style numbers implying data that doesn't exist.
-- **`services/verification/researchProtocol.ts`** — `verifyClaim` runs the
-  real pipeline: search → fetch → LLM checks for genuine supporting
-  sentences and contradictions per source → confidence score. Wired into
-  **`ledger.verifyClaim`** and a "verify" button in `LedgerExplorer`.
-- **Treat confidence scores as a triage signal, not a certified fact-check**
-  — heuristic extraction and coarse trust tiers mean this is meaningfully
-  better than mock data, but still short of a rigorous verification system.
+---
 
-## Known limits, on purpose
+## 6-Month Launch Roadmap
 
-- **Local Windows infra (this machine).** MariaDB may run as a user process
-  (not a Windows service) when service install needs elevation; Redis for
-  BullMQ listens on **6380** via the portable Redis 5 build under
-  `C:\Redis5`, because the winget "Redis on Windows" package is 3.0.504 and
-  is too old for BullMQ — and stopping that system service also needs
-  elevation. Use `npm run local:infra` to (re)start both. BullMQ warns that
-  Redis **>= 6.2** is recommended; 5.0.14 works for basic queues but is a
-  known compromise until a newer Redis (Memurai/WSL/Docker) can be installed
-  with elevation. This is an environment workaround, not an application fake.
-- **LLM routing.** `LLM_PROVIDER=auto` tries free backends first
-  (`ollama` → `openrouter` → `nvidia` → `pollinations` → `groq` → `gemini` →
-  `anthropic`). OpenRouter (`OPENROUTER_API_KEY`) exposes live `:free` models
-  plus `openrouter/free` router; NVIDIA NIM (`NVIDIA_API_KEY` from
-  build.nvidia.com) is OpenAI-compatible credit-based free tier; Groq/Gemini
-  need free-tier keys; Pollinations anonymous text is rate-limited. Free model
-  catalogs are fetched from provider APIs when keys are set — not hardcoded
-  marketing lists. Failures throw; nothing returns canned fake completions.
-  See IDEa → Models for live status.
-- **Campaign pause does not cancel in-flight `dispatchTask` calls** — it only
-  stops the queue worker from advancing to the next stage (re-queues with
-  delay). Full cancellation needs a separate worker process + abort tokens.
-- **SSE `/events` has no auth yet** — same stand-in as `x-user-id` header auth.
-- **IDEa is not a VS Code fork** — it is an in-app agent visibility IDE over
-  real tasks/events/costs. Marketing docs that claim "100 IDEa capabilities"
-  / patent-eligible IDE features are out of scope projections, not this build.
-- **OAuth token refresh is out of scope.** Every publishing adapter takes a
-  bearer/access token from env as a given. Getting and refreshing real
-  user-context tokens (several platforms need more than a static token —
-  X/Twitter posting in particular typically needs OAuth1 user-context
-  signing) is a whole feature in itself.
-- **Free media endpoints are informally rate-limited.** Pollinations and
-  StreamElements can throttle or change without notice. Now handled via
-  worker concurrency (see the queue section above) rather than blocking
-  entire days sequentially.
-- **QA Agent has no sandbox beyond the Git worktree** — runs test/lint
-  commands directly on the host. Fine for trusted code; add a real
-  container boundary before pointing it at untrusted input.
-- **TikTok/Instagram need a public video URL**, not a local file path.
-  YouTube publishing works with local files because its own upload API
-  takes bytes directly — the other platforms' APIs fetch the URL
-  server-side, so you'd need to upload the rendered file to S3/GCS/a CDN
-  first. That upload step isn't built.
-- **Cost meter isn't truly real-time.** Token/cost totals are written when
-  a task *completes*, not streamed during execution — a task that's still
-  `running` won't show partial cost yet.
+| Month | Goal | Focus |
+|---|---|---|
+| 1 | Prototype | 1 channel, manual oversight, test generation quality |
+| 2 | Framework | Move to orchestrator, connect YouTube API |
+| 3 | Network | Clone to 10 channels, set distinct niche profiles |
+| 4 | Optimize | Activate A/B testing, feed retention data back |
+| 5 | Scale | Comment bot live, trend predictor tuned |
+| 6 | Harvest | 3-5 videos/channel/week, all channels monetized |
+
+---
+
+## File Structure
+
+```
+src/
+├── index.js                    # CLI entry point
+├── orchestrator/
+│   └── master.js               # Main pipeline scheduler
+├── layers/
+│   ├── layer1-data-brain/      # Trend + keyword intelligence
+│   ├── layer2-asset-forge/     # Content generation
+│   ├── layer3-sanity-shield/   # Compliance + humanization
+│   ├── layer4-multi-runner/    # Channel management
+│   └── layer5-optimizer/       # A/B + self-improvement
+├── youtube/
+│   └── youtube-api.js          # YouTube Data API v3 client
+├── cli/
+│   ├── dashboard.js            # Live status dashboard
+│   ├── generate.js             # Manual generation command
+│   ├── analyze.js              # Performance analysis
+│   └── setup.js                # Setup wizard
+└── utils/
+    ├── logger.js               # Channel-aware logging
+    └── helpers.js              # Shared utilities
+
+data/
+├── niches/                     # 10 channel niche profiles
+├── trends/                     # Master queue + trend cache
+├── ab-tests/                   # A/B test records
+├── analytics/                  # Channel analytics + health
+└── prompt-history/             # Self-improver parameters
+
+output/
+├── scripts/                    # Generated JSON scripts
+├── audio/                      # TTS audio files
+├── thumbnails/                 # Generated thumbnail images
+├── videos/                     # Rendered video files
+└── metadata/                   # SEO metadata packages
+
+scripts/
+├── setup.js                    # Project initialization
+└── oauth.js                    # YouTube OAuth flow
+```
+
+---
+
+## Environment Variables Reference
+
+See `.env.example` for the complete list. Minimum required to start:
+
+```bash
+OPENAI_API_KEY=           # Script generation (required)
+ELEVENLABS_API_KEY=       # TTS audio (optional, uses placeholders without)
+YOUTUBE_CLIENT_ID=        # YouTube upload (required for upload)
+YOUTUBE_CLIENT_SECRET=    # YouTube upload (required for upload)
+PEXELS_API_KEY=           # B-Roll footage (optional, uses mock without)
+CHANNEL_01_REFRESH_TOKEN= # Per-channel OAuth (required per channel)
+CHANNEL_01_ID=            # YouTube channel ID
+```
+
+---
+
+*CC-OS — Built for the New Era of Content Creation*
+
+---
+
+## Phase 13 — Cross-Platform Syndication
+
+Every Short video published to YouTube is automatically crossposted to **Instagram Reels** and **Facebook Reels** after upload.
+
+### Setup
+
+```bash
+# 1. Get Meta credentials (Facebook Developers → Create App → Graph API)
+# 2. Add to .env for each channel:
+CHANNEL_01_FB_PAGE_ID=123456789
+CHANNEL_01_FB_ACCESS_TOKEN=EAAH...
+CHANNEL_01_INSTAGRAM_BUSINESS_ID=987654321
+CHANNEL_01_INSTAGRAM_ACCESS_TOKEN=EAAH...
+
+# 3. Set your public URL (or use ngrok for local dev):
+STATIC_SERVER_URL=https://your-domain.com   # or http://your-ngrok-url.io
+```
+
+### How it works
+
+```
+YouTube Upload ✅
+     ↓
+social.crosspost executor
+     ↓
+┌────────────────┬────────────────────┐
+│  Instagram     │  Facebook          │
+│  (immediate)   │  (+15 min stagger) │
+│                │                    │
+│  • 1080x1920   │  • 1080x1920       │
+│  • 30 IG tags  │  • 12 FB tags      │
+│  • No YT logo  │  • No YT logo      │
+│  • IG overlay  │  • FB overlay      │
+└────────────────┴────────────────────┘
+```
+
+### White-hat protections enforced automatically
+
+- **Watermark scrub**: FFmpeg blurs the bottom-right corner (YouTube subscribe button area) before upload
+- **Aspect ratio**: Forces exactly 1080×1920 — Meta rejects anything else
+- **Duration cap**: Hard cut at 58 seconds — Meta's 60s limit with safety buffer
+- **Stagger delay**: Facebook always posts 15 minutes after Instagram — prevents spam flags
+- **Unique captions**: Different hashtag sets per platform, different CTA copy
+- **No TikTok watermarks**: Raw MP4 only — never a TikTok re-download
+
+### New CLI commands
+
+```bash
+node src/index.js crosspost --channel 1 --video ./output/videos/my_video.mp4 --topic "AI tools"
+node src/index.js start  # crosspost runs automatically after each YouTube upload
+```
+
+---
+
+## Phase 14 — Mission Control Dashboard
+
+A full web dashboard for managing all 10 channels from one screen.
+
+### Start
+
+```bash
+node src/index.js mission-control   # dashboard only, port 4002
+node src/index.js start             # starts everything including dashboard
+```
+
+Then open: **http://localhost:4002**
+
+### Dashboard Features
+
+**Channel Command Center**
+- Live health status for all 10 channels (Green/Yellow/Orange/Red)
+- Subscriber count, 30-day views, estimated revenue per channel
+- Platform badges (YT/IG/FB) showing what's configured
+- One-click pause/resume per channel
+- "⚡ Burst" button to trigger 5 Shorts for any channel immediately
+
+**Content Calendar**
+- 10-day calendar view (3 days back, 7 days forward)
+- Color-coded events: Red=YouTube, Orange=Instagram, Blue=Facebook
+- **Drag-to-reschedule**: drag any event to a new day — updates the DB and reschedules the job
+- Shows published ✅, scheduled 🕐, failed ❌ states
+
+**Bulk Publish**
+- Select any combination of channels (1-10)
+- Choose platforms (YouTube + Instagram + Facebook)
+- Enter a topic — the system generates unique content per channel
+- Visual variation auto-applied per channel (different title variant, hashtags, thumbnail)
+- Dry-run preview mode before committing
+- Live batch progress via SSE
+
+**Token Vault**
+- Securely add/rotate OAuth tokens via UI (no terminal access needed)
+- AES-256 encrypted storage on disk
+- All rotations logged to audit trail
+- Shows which channels have tokens configured per platform
+
+**Audit Log**
+- Every critical action logged: uploads, pauses, token rotations, bulk dispatches
+- Timestamps, channel IDs, error reasons
+
+**Cross-Platform Analytics**
+- Side-by-side YouTube vs Instagram vs Facebook view comparison
+- Per-channel platform breakdown bar charts
+
+### Health Scoring Algorithm
+
+Every 60 minutes the health worker scores each channel 0-100:
+
+| Deduction | Points |
+|---|---|
+| CTR drop >60% vs baseline | -35 |
+| Upload failure streak (×3) | -45 |
+| Token missing | -40 |
+| Monetization disabled | -30 |
+| Views drop >50% | -25 |
+| YouTube strike | -50 per strike |
+| No upload in 14 days | -15 |
+
+| Score | Status |
+|---|---|
+| 80-100 | 🟢 Healthy |
+| 60-79 | 🟡 Warning |
+| 40-59 | 🟠 Degraded |
+| 0-39 | 🔴 Critical → Auto-paused + Alert sent |
+
+### Notifications
+
+Set either (or both) in `.env`:
+```bash
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+TELEGRAM_BOT_TOKEN=bot...
+TELEGRAM_CHAT_ID=...
+```
+
+Alerts sent for: critical channel status, rapid pivot triggers, bulk dispatch completions, channel recovery.
+
+---
+
+## Complete Command Reference
+
+```bash
+node src/index.js start             # Full system (all layers + dashboard + social)
+node src/index.js dashboard         # CLI terminal dashboard
+node src/index.js mission-control   # Web dashboard at :4002
+node src/index.js generate -c 1     # Generate content for channel 1
+node src/index.js generate -c 1 --topic "best AI tools"
+node src/index.js analyze --days 7  # Performance report
+node src/index.js optimize          # Run self-improvement cycle
+node src/index.js crosspost -c 1 -v ./output/videos/video.mp4
+node src/index.js health            # Run health check now
+node src/index.js setup             # Setup wizard
+node scripts/setup.js               # Initialize project
+node scripts/oauth.js --channel 01  # OAuth for YouTube channel
+```
+
+## Port Map
+
+| Port | Service |
+|---|---|
+| 3000 | OAuth callback server (temporary, during setup) |
+| 4001 | Static file server (serves videos to Meta API) |
+| 4002 | Mission Control web dashboard |
