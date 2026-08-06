@@ -1,4 +1,5 @@
 import { router } from "../_core/trpc";
+import { authRouter } from "./auth.router";
 import { scriptRouter } from "./script.router";
 import { ledgerRouter } from "./ledger.router";
 import { godMachineRouter } from "./godMachine.router";
@@ -7,8 +8,8 @@ import { ideRouter } from "./ide.router";
 import { connectorsRouter } from "./connectors.router";
 import { settingsRouter } from "./settings.router";
 import { pipelineRouter } from "./pipeline.router";
-import { authRouter } from "./auth.router";
 import { workflowRouter } from "./workflow.router";
+import { knowledgeRouter } from "./knowledge.router";
 import { agentsRouter } from "./agents.router";
 import { toolsRouter } from "./tools.router";
 import { governanceRouter } from "./governance.router";
@@ -27,6 +28,7 @@ export const appRouter = router({
   settings: settingsRouter,
   pipeline: pipelineRouter,
   workflow: workflowRouter,
+  knowledge: knowledgeRouter,
   agents: agentsRouter,
   tools: toolsRouter,
   governance: governanceRouter,
@@ -36,3 +38,11 @@ export const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
+
+export const appRouterV1 = appRouter;
+
+export const appRouterV2 = router({
+  ...appRouter._def.queries,
+  ...appRouter._def.mutations,
+  ...appRouter._def.subscriptions,
+});

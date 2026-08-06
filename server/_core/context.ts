@@ -25,8 +25,14 @@ export type AuthContext = {
  * Resolves identity from a real httpOnly session cookie only.
  * Never trusts a raw `x-user-id` header — that stand-in is removed.
  * Optional `x-organization-id` switches active org when the user is a member.
+ *
+ * Extracted as a standalone function so both the tRPC context and the REST
+ * facade (`/api/v1`) enforce identical session + RBAC resolution.
  */
-export async function createContext({ req, res }: CreateExpressContextOptions): Promise<AuthContext> {
+export async function createAuthContext(
+  req: AuthContext["req"],
+  res: AuthContext["res"],
+): Promise<AuthContext> {
   const cookies = parseCookies(req.headers.cookie);
   const token = cookies[SESSION_COOKIE];
 
@@ -120,6 +126,10 @@ export async function createContext({ req, res }: CreateExpressContextOptions): 
     permissions: perms,
     sessionId: session.sessionId,
   };
+}
+
+export async function createContext(opts: CreateExpressContextOptions): Promise<AuthContext> {
+  return createAuthContext(opts.req, opts.res);
 }
 
 export type Context = AuthContext;

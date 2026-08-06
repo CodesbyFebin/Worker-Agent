@@ -1,7 +1,9 @@
 import express from "express";
 import cors from "cors";
 import * as trpcExpress from "@trpc/server/adapters/express";
-import { appRouter } from "../routers/_app";
+import { appRouter, appRouterV1 } from "../routers/_app";
+import { versionedRestRouter } from "../routers/rest.index";
+import { webhookRouter } from "../routers/webhook";
 import { createContext } from "./context";
 import { env } from "./env";
 import { shutdownQueues } from "./queue";
@@ -15,7 +17,9 @@ import { db } from "./db";
 import { organizationMembers } from "../../drizzle/schema";
 import { rateLimitMiddleware } from "./rateLimit";
 import { redactString } from "./redact";
-import { incCounter, metricsPrometheus, metricsSnapshot } from "./metrics";
+import { metrics, metricsText } from "./metrics";
+import { logger, requestLogger } from "./logger";
+import { initTracing, shutdownTracing } from "./tracing";
 
 const app = express();
 
@@ -30,9 +34,22 @@ app.use(
 app.use(express.json({ limit: "2mb" }));
 
 app.use((req, res, next) => {
-  incCounter("http_requests_total");
+  const start = Date.now();
+  const reqLogger = requestLogger({ method: req.method, route: req.path, requestId: req.headers["x-request-id"] });
+  reqLogger.info("request_started");
+  metrics.httpRequestTotal.inc({ method: req.method, route: req.path, status: "pending" });
+
   res.on("finish", () => {
-    if (res.statusCode >= 400) incCounter("http_errors_total");
+    const durationMs = Date.now() - start;
+    const status = String(res.statusCode);
+    metrics.httpRequestTotal.inc({ method: req.method, route: req.path, status });
+    metrics.httpRequestDurationMs.observe({ method: req.method, route: req.path }, durationMs);
+    if (res.statusCode >= 400) {
+      metrics.trpcErrorsTotal.inc({ path: req.path });
+      reqLogger.warn({ status, durationMs }, "request_failed");
+    } else {
+      reqLogger.info({ status, durationMs }, "request_completed");
+    }
   });
   next();
 });
@@ -42,10 +59,10 @@ registerHealthRoutes(app);
 app.get("/metrics", (req, res) => {
   const accept = req.headers.accept ?? "";
   if (accept.includes("text/plain") || req.query.format === "prometheus") {
-    res.type("text/plain; version=0.0.4").send(metricsPrometheus());
+    res.type("text/plain; version=0.0.4").send(metricsText());
     return;
   }
-  res.json(metricsSnapshot());
+  res.json(metrics.register.getMetricsAsArray());
 });
 
 const apiLimiter = rateLimitMiddleware({
@@ -66,11 +83,14 @@ app.use(
     router: appRouter,
     createContext,
     onError({ error, path }) {
-      incCounter("trpc_errors_total");
-      console.error(`[tRPC] ${path ?? "<unknown>"}:`, redactString(error.message));
+      metrics.trpcErrorsTotal.inc({ path: path ?? "unknown" });
+      logger.warn({ path, error: redactString(error.message) }, "trpc_error");
     },
   }),
 );
+
+app.use("/api/v1", apiLimiter, versionedRestRouter);
+app.use("/webhooks", webhookRouter);
 
 /**
  * Org-scoped SSE stream. Requires a valid session cookie; events are filtered
@@ -129,13 +149,31 @@ async function main() {
   process.env.WA_PROCESS_ROLE = "api";
   await ensureAuthBootstrap();
 
+  if (env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT || env.NODE_ENV === "development") {
+    try {
+      initTracing();
+      logger.info("OpenTelemetry tracing initialized");
+    } catch (err) {
+      logger.warn({ error: redactString(err instanceof Error ? err.message : String(err)) }, "tracing_init_failed");
+    }
+  }
+
+  try {
+    const { pluginRegistry } = await import("../services/plugins/registry");
+    const { default: builtinDummyAi } = await import("../services/plugins/builtins");
+    logger.info({ plugins: pluginRegistry.list().map((p) => p.manifest.id) }, "plugins_loaded");
+  } catch (err) {
+    logger.warn({ error: redactString(err instanceof Error ? err.message : String(err)) }, "plugin_init_failed");
+  }
+
   const server = app.listen(env.PORT, () => {
-    console.log(`Worker Agent.Cloud API listening on :${env.PORT}`);
+    logger.info({ port: env.PORT, role: "api" }, "api_started");
   });
 
   async function shutdown(signal: string) {
-    console.log(`[api-shutdown] received ${signal}, closing HTTP and queue publishers…`);
+    logger.info({ signal }, "api_shutdown_started");
     await shutdownQueues();
+    await shutdownTracing().catch(() => {});
     server.close(() => process.exit(0));
   }
 
@@ -144,3 +182,4 @@ async function main() {
 }
 
 void main();
+
