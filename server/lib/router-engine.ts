@@ -179,7 +179,7 @@ async function callOpenAIResponses(
         model,
         instructions: GOVERNANCE_INSTRUCTIONS,
         input: request.messages,
-        tools: request.research ? [{ type: "web_search_preview" }] : undefined,
+        tools: request.research ? [{ type: "web_search" }] : undefined,
         store: false,
       }),
     },
