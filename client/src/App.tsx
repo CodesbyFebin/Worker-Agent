@@ -6,6 +6,8 @@ import { trpc } from "./lib/trpc";
 import { AppShell, type WorkspaceId } from "./components/AppShell";
 import { AuthGate } from "./components/AuthGate";
 import { OrgSessionBar } from "./components/OrgSessionBar";
+import { LandingPage } from "./marketing/LandingPage";
+import { CommandCenter } from "./mission-control/CommandCenter";
 import { ScriptStudioWorkspace } from "./features/script-studio/ScriptStudioWorkspace";
 import { EvidenceArtifactsWorkspace } from "./features/evidence/EvidenceArtifactsWorkspace";
 import { GodMachineWorkspace } from "./features/god-machine/GodMachineWorkspace";
@@ -22,10 +24,7 @@ import { ToolsGatewayWorkspace } from "./features/tools/ToolsGatewayWorkspace";
 import { TemplateLibraryWorkspace } from "./features/templates/TemplateLibraryWorkspace";
 import { SocialManagerWorkspace } from "./features/social/SocialManagerWorkspace";
 import { ActivityWorkspace, InboxWorkspace } from "./features/activity/ActivityWorkspace";
-import {
-  CalendarWorkspace,
-  SettingsWorkspace,
-} from "./features/ops/OpsWorkspaces";
+import { CalendarWorkspace, SettingsWorkspace } from "./features/ops/OpsWorkspaces";
 import { GovernanceWorkspace } from "./features/ops/GovernanceWorkspace";
 import { RecoveryWorkspace } from "./features/ops/RecoveryWorkspace";
 import { ContentOpsWorkspace, BloggingStudioWorkspace } from "./features/content/ContentOpsWorkspace";
@@ -50,7 +49,7 @@ function renderWorkspace(active: WorkspaceId) {
     case "workspace":
       return <ContentOpsWorkspace />;
     case "overview":
-      return <OverviewWorkspace />;
+      return <CommandCenter />;
     case "learn":
       return <LearnWorkspace />;
     case "automations":
@@ -108,27 +107,30 @@ export default function App() {
         httpBatchLink({
           url: API_URL,
           fetch(url, options) {
-            return fetch(url, {
-              ...options,
-              credentials: "include",
-            });
+            return fetch(url, { ...options, credentials: "include" });
           },
         }),
       ],
     }),
   );
 
+  const isPublicLanding = window.location.pathname === "/";
+
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <AuthGate>
-          <div className="flex h-screen min-h-0 flex-col">
-            <OrgSessionBar />
-            <div className="min-h-0 flex-1">
-              <AppShell>{(active) => renderWorkspace(active)}</AppShell>
+        {isPublicLanding ? (
+          <LandingPage onLaunchApp={() => window.location.assign("/dashboard")} />
+        ) : (
+          <AuthGate>
+            <div className="flex h-screen min-h-0 flex-col">
+              <OrgSessionBar />
+              <div className="min-h-0 flex-1">
+                <AppShell>{(active) => renderWorkspace(active)}</AppShell>
+              </div>
             </div>
-          </div>
-        </AuthGate>
+          </AuthGate>
+        )}
       </QueryClientProvider>
     </trpc.Provider>
   );
