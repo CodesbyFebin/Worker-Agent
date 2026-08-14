@@ -1,5 +1,5 @@
 {
-  "version": "3.0",
+  "version": "3.1",
   "description": "Capability-aware provider routing for Worker Agent. Secrets stay in environment variables; quotas are informational because provider limits change.",
   "lanes": {
     "speed": {
@@ -22,10 +22,10 @@
           "protocol": "openai-compatible",
           "base_url": "http://localhost:11434/v1",
           "api_key": "ollama",
-          "api_key_env": "OLLAMA_API_KEY",
           "supports_web_search": false,
           "privacy": "local",
-          "cost_class": "local"
+          "cost_class": "local",
+          "local_only": true
         },
         {
           "name": "OpenRouter",
@@ -62,7 +62,8 @@
           "api_key_env": "OPENAI_API_KEY",
           "supports_web_search": true,
           "privacy": "cloud",
-          "cost_class": "paid"
+          "cost_class": "paid",
+          "requires_env": "ALLOW_PAID_FALLBACK"
         }
       ]
     },
@@ -78,7 +79,8 @@
           "api_key": "ollama",
           "supports_web_search": false,
           "privacy": "local",
-          "cost_class": "local"
+          "cost_class": "local",
+          "local_only": true
         },
         {
           "name": "Groq",
@@ -117,6 +119,7 @@
     "Never persist provider API keys in this file.",
     "Provider quotas and model availability must be treated as dynamic.",
     "Local Ollama is available only to processes that can reach the configured host.",
-    "Deep research requires a provider with supports_web_search=true."
+    "Deep research requires a provider with supports_web_search=true.",
+    "Paid providers are opt-in and require ALLOW_PAID_FALLBACK=true."
   ]
 }
