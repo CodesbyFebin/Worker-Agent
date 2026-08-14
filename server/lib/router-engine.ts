@@ -31,6 +31,10 @@ type RouterConfig = {
     timeout_ms: number;
     max_attempts_per_request: number;
   };
+  health?: {
+    cooldown_after_rate_limit_seconds?: number;
+    failure_threshold?: number;
+  };
 };
 
 export type RouterMessage = {
@@ -56,6 +60,13 @@ export type RouteResult = {
 type ProviderResult = {
   reply: string;
   researchUsed: boolean;
+};
+
+type ProviderHealth = {
+  consecutiveFailures: number;
+  cooldownUntil: number;
+  lastFailureAt?: number;
+  lastError?: string;
 };
 
 const CONFIG_PATH = join(process.cwd(), "kilo-router-db.json");
@@ -254,29 +265,50 @@ async function callProvider(config: ProviderConfig, request: RouteRequest, timeo
 }
 
 export class GodRouter {
+  private readonly health = new Map<string, ProviderHealth>();
+
+  private healthFor(name: string): ProviderHealth {
+    const existing = this.health.get(name);
+    if (existing) return existing;
+    const fresh: ProviderHealth = { consecutiveFailures: 0, cooldownUntil: 0 };
+    this.health.set(name, fresh);
+    return fresh;
+  }
+
+  private async backoff(attempt: number): Promise<void> {
+    const delay = Math.min(250 * 2 ** Math.max(0, attempt - 1), 2000);
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
+
   async route(request: RouteRequest): Promise<RouteResult> {
     const config = await loadConfig();
     const lane = config.lanes[request.lane];
     if (!lane) throw new Error(`Lane ${request.lane} not found`);
 
-    const providers = lane.providers.filter((provider) => {
-      if (!providerEnabled(provider)) return false;
-      if (request.research && !provider.supports_web_search) return false;
-      return true;
-    });
+    const providers = lane.providers
+      .filter((provider) => {
+        if (!providerEnabled(provider)) return false;
+        if (request.research && !provider.supports_web_search) return false;
+        return this.healthFor(provider.name).cooldownUntil <= Date.now();
+      });
 
     if (!providers.length) {
-      throw new Error(`No configured providers satisfy lane=${request.lane}${request.research ? " and web-search capability" : ""}`);
+      throw new Error(`No currently healthy providers satisfy lane=${request.lane}${request.research ? " and web-search capability" : ""}`);
     }
 
     let attempts = 0;
     let lastError: unknown;
+    const cooldownSeconds = config.health?.cooldown_after_rate_limit_seconds ?? 60;
+    const failureThreshold = config.health?.failure_threshold ?? 3;
 
     for (const provider of providers.slice(0, config.selection.max_attempts_per_request)) {
       attempts += 1;
       const started = Date.now();
+      const state = this.healthFor(provider.name);
       try {
         const result = await callProvider(provider, request, config.selection.timeout_ms);
+        state.consecutiveFailures = 0;
+        state.cooldownUntil = 0;
         console.info(JSON.stringify({
           event: "worker_agent_router",
           lane: request.lane,
@@ -299,17 +331,26 @@ export class GodRouter {
       } catch (error) {
         lastError = error;
         const status = typeof error === "object" && error && "status" in error ? Number((error as { status?: number }).status) : undefined;
+        state.consecutiveFailures += 1;
+        state.lastFailureAt = Date.now();
+        state.lastError = error instanceof Error ? error.message : String(error);
+        const retryable = typeof status === "number" ? isRetryable(status, config) : true;
+        if ((status === 429 || state.consecutiveFailures >= failureThreshold) && retryable) {
+          state.cooldownUntil = Date.now() + cooldownSeconds * 1000;
+        }
         console.warn(JSON.stringify({
           event: "worker_agent_router",
           lane: request.lane,
           provider: provider.name,
           status: "failed",
-          retryable: typeof status === "number" ? isRetryable(status, config) : true,
+          retryable,
           httpStatus: status,
           latency_ms: Date.now() - started,
+          cooldown_until: state.cooldownUntil || null,
           runtime: isLocalRuntime ? "local" : "cloud",
         }));
-        if (typeof status === "number" && !isRetryable(status, config)) break;
+        if (typeof status === "number" && !retryable) break;
+        if (attempts < config.selection.max_attempts_per_request) await this.backoff(attempts);
       }
     }
 
@@ -318,6 +359,7 @@ export class GodRouter {
 
   async status() {
     const config = await loadConfig();
+    const now = Date.now();
     return {
       runtime: isLocalRuntime ? "local" : "cloud",
       lanes: Object.fromEntries(
@@ -325,14 +367,20 @@ export class GodRouter {
           name,
           {
             priority: lane.priority,
-            providers: lane.providers.map((provider) => ({
-              name: provider.name,
-              model: getModel(provider),
-              enabled: providerEnabled(provider),
-              localOnly: Boolean(provider.local_only),
-              webSearch: provider.supports_web_search,
-              costClass: provider.cost_class,
-            })),
+            providers: lane.providers.map((provider) => {
+              const health = this.healthFor(provider.name);
+              return {
+                name: provider.name,
+                model: getModel(provider),
+                enabled: providerEnabled(provider),
+                localOnly: Boolean(provider.local_only),
+                webSearch: provider.supports_web_search,
+                costClass: provider.cost_class,
+                cooldownUntil: health.cooldownUntil || null,
+                cooldownSeconds: health.cooldownUntil > now ? Math.ceil((health.cooldownUntil - now) / 1000) : 0,
+                consecutiveFailures: health.consecutiveFailures,
+              };
+            }),
           },
         ]),
       ),
