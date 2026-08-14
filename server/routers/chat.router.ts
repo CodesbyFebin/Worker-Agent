@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { organizationProcedure, router } from "../_core/trpc";
-import { kiloRouter } from "../lib/router-engine";
+import { godRouter } from "../lib/router-engine";
 
 const messageSchema = z.object({
   role: z.enum(["user", "assistant"]),
@@ -20,8 +20,7 @@ export const chatRouter = router({
     )
     .mutation(async ({ input }) => {
       const effectiveLane = input.research ? "research" : input.lane;
-
-      const result = await kiloRouter.route({
+      const result = await godRouter.route({
         lane: effectiveLane,
         messages: input.messages,
         research: input.research,
@@ -36,4 +35,6 @@ export const chatRouter = router({
         attempts: result.attempts,
       };
     }),
+
+  status: organizationProcedure.query(async () => godRouter.status()),
 });
