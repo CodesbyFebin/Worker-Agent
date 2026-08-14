@@ -20,17 +20,36 @@ jobs:
           node-version: "20"
           cache: npm
 
-      - name: Install
+      - name: Install root dependencies
         run: npm ci
 
-      - name: Typecheck
-        run: npm run typecheck
+      - name: Install server dependencies
+        run: npm --prefix server ci
 
-      - name: Lint
-        run: npm run lint
+      - name: Install client dependencies
+        # client/ has no package-lock.json yet, so npm ci would fail.
+        run: npm --prefix client install --no-audit --no-fund
 
-      - name: Test
-        run: npm run test
+      - name: Typecheck server
+        run: npm --prefix server run typecheck
 
-      - name: Build
-        run: npm run build
+      - name: Typecheck client
+        run: npm --prefix client run typecheck
+
+      - name: Lint server (optional)
+        run: npm --prefix server run lint --if-present
+
+      - name: Lint client (optional)
+        run: npm --prefix client run lint --if-present
+
+      - name: Test server (optional)
+        run: npm --prefix server run test --if-present
+
+      - name: Test client (optional)
+        run: npm --prefix client run test --if-present
+
+      - name: Build server
+        run: npm --prefix server run build
+
+      - name: Build client
+        run: npm --prefix client run build
