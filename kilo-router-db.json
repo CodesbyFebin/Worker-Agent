@@ -1,0 +1,125 @@
+{
+  "version": "3.1",
+  "description": "Capability-aware provider routing for Worker Agent. Secrets stay in environment variables; quotas are informational because provider limits change.",
+  "lanes": {
+    "speed": {
+      "priority": 1,
+      "description": "Low-latency command chat and operator UX.",
+      "providers": [
+        {
+          "name": "Groq",
+          "model": "llama-3.3-70b-versatile",
+          "protocol": "openai-compatible",
+          "base_url": "https://api.groq.com/openai/v1",
+          "api_key_env": "GROQ_API_KEY",
+          "supports_web_search": false,
+          "privacy": "cloud",
+          "cost_class": "free-tier"
+        },
+        {
+          "name": "Ollama",
+          "model": "qwen3:8b",
+          "protocol": "openai-compatible",
+          "base_url": "http://localhost:11434/v1",
+          "api_key": "ollama",
+          "supports_web_search": false,
+          "privacy": "local",
+          "cost_class": "local",
+          "local_only": true
+        },
+        {
+          "name": "OpenRouter",
+          "model": "openrouter/free",
+          "protocol": "openai-compatible",
+          "base_url": "https://openrouter.ai/api/v1",
+          "api_key_env": "OPENROUTER_API_KEY",
+          "supports_web_search": false,
+          "privacy": "cloud",
+          "cost_class": "free-tier"
+        }
+      ]
+    },
+    "research": {
+      "priority": 2,
+      "description": "Fresh web-grounded research, market intelligence, and source-backed analysis.",
+      "providers": [
+        {
+          "name": "Gemini",
+          "model": "gemini-3.6-flash",
+          "protocol": "gemini-interactions",
+          "base_url": "https://generativelanguage.googleapis.com/v1beta/interactions",
+          "api_key_env": "GEMINI_API_KEY",
+          "supports_web_search": true,
+          "privacy": "cloud",
+          "cost_class": "free-tier"
+        },
+        {
+          "name": "OpenAI",
+          "model_env": "OPENAI_RESEARCH_MODEL",
+          "model_default": "gpt-5",
+          "protocol": "openai-responses",
+          "base_url": "https://api.openai.com/v1/responses",
+          "api_key_env": "OPENAI_API_KEY",
+          "supports_web_search": true,
+          "privacy": "cloud",
+          "cost_class": "paid",
+          "requires_env": "ALLOW_PAID_FALLBACK"
+        }
+      ]
+    },
+    "governance": {
+      "priority": 3,
+      "description": "Policy, security, content governance, and sensitive reasoning.",
+      "providers": [
+        {
+          "name": "Ollama",
+          "model": "qwen3:8b",
+          "protocol": "openai-compatible",
+          "base_url": "http://localhost:11434/v1",
+          "api_key": "ollama",
+          "supports_web_search": false,
+          "privacy": "local",
+          "cost_class": "local",
+          "local_only": true
+        },
+        {
+          "name": "Groq",
+          "model": "openai/gpt-oss-safeguard-20b",
+          "protocol": "openai-compatible",
+          "base_url": "https://api.groq.com/openai/v1",
+          "api_key_env": "GROQ_API_KEY",
+          "supports_web_search": false,
+          "privacy": "cloud",
+          "cost_class": "free-tier"
+        },
+        {
+          "name": "OpenRouter",
+          "model": "openrouter/free",
+          "protocol": "openai-compatible",
+          "base_url": "https://openrouter.ai/api/v1",
+          "api_key_env": "OPENROUTER_API_KEY",
+          "supports_web_search": false,
+          "privacy": "cloud",
+          "cost_class": "free-tier"
+        }
+      ]
+    }
+  },
+  "selection": {
+    "strategy": "priority-fallback",
+    "retryable_statuses": [408, 409, 429, 500, 502, 503, 504],
+    "timeout_ms": 45000,
+    "max_attempts_per_request": 3
+  },
+  "health": {
+    "check_interval_seconds": 60,
+    "cooldown_after_rate_limit_seconds": 60
+  },
+  "notes": [
+    "Never persist provider API keys in this file.",
+    "Provider quotas and model availability must be treated as dynamic.",
+    "Local Ollama is available only to processes that can reach the configured host.",
+    "Deep research requires a provider with supports_web_search=true.",
+    "Paid providers are opt-in and require ALLOW_PAID_FALLBACK=true."
+  ]
+}
