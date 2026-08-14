@@ -13,6 +13,8 @@ type ProviderConfig = {
   supports_web_search: boolean;
   privacy: "local" | "cloud";
   cost_class: "local" | "free-tier" | "paid";
+  local_only?: boolean;
+  requires_env?: string;
 };
 
 type LaneConfig = {
@@ -57,6 +59,7 @@ type ProviderResult = {
 };
 
 const CONFIG_PATH = join(process.cwd(), "kilo-router-db.json");
+const isLocalRuntime = process.env.NODE_ENV === "development" && !process.env.VERCEL;
 
 const GOVERNANCE_INSTRUCTIONS = `You are Worker Agent, the command intelligence layer for an autonomous operating system for AI-powered content networks.
 
@@ -72,9 +75,7 @@ async function loadConfig(): Promise<RouterConfig> {
 }
 
 function getModel(config: ProviderConfig): string {
-  if (config.model_env) {
-    return process.env[config.model_env] || config.model_default || "";
-  }
+  if (config.model_env) return process.env[config.model_env] || config.model_default || "";
   return config.model || "";
 }
 
@@ -85,6 +86,14 @@ function getApiKey(config: ProviderConfig): string | undefined {
 
 function isRetryable(status: number, config: RouterConfig): boolean {
   return config.selection.retryable_statuses.includes(status);
+}
+
+function providerEnabled(config: ProviderConfig): boolean {
+  if (config.local_only && !isLocalRuntime) return false;
+  if (config.requires_env && process.env[config.requires_env] !== "true") return false;
+  const model = getModel(config);
+  const key = getApiKey(config);
+  return Boolean(model) && (config.privacy === "local" || Boolean(key));
 }
 
 async function postJson(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
@@ -103,9 +112,7 @@ function extractOpenAIText(payload: unknown): string {
     output_text?: unknown;
     choices?: Array<{ message?: { content?: unknown } }>;
   };
-
   if (typeof value.output_text === "string") return value.output_text.trim();
-
   const content = value.choices?.[0]?.message?.content;
   return typeof content === "string" ? content.trim() : "";
 }
@@ -115,9 +122,7 @@ async function callOpenAICompatible(
   request: RouteRequest,
   timeoutMs: number,
 ): Promise<ProviderResult> {
-  const key = getApiKey(config);
-  if (!key) throw new Error(`${config.name} key is not configured`);
-
+  const key = getApiKey(config) ?? "ollama";
   const model = getModel(config);
   if (!model) throw new Error(`${config.name} model is not configured`);
 
@@ -135,7 +140,6 @@ async function callOpenAICompatible(
           { role: "system", content: GOVERNANCE_INSTRUCTIONS },
           ...request.messages,
         ],
-        temperature: 0.4,
         stream: false,
       }),
     },
@@ -152,7 +156,6 @@ async function callOpenAICompatible(
   const payload = await response.json();
   const reply = extractOpenAIText(payload);
   if (!reply) throw new Error(`${config.name} returned an empty response`);
-
   return { reply, researchUsed: false };
 }
 
@@ -163,7 +166,6 @@ async function callOpenAIResponses(
 ): Promise<ProviderResult> {
   const key = getApiKey(config);
   if (!key) throw new Error(`${config.name} key is not configured`);
-
   const model = getModel(config);
   if (!model) throw new Error(`${config.name} model is not configured`);
 
@@ -196,7 +198,6 @@ async function callOpenAIResponses(
   const payload = await response.json();
   const reply = extractOpenAIText(payload);
   if (!reply) throw new Error(`${config.name} returned an empty response`);
-
   return { reply, researchUsed: Boolean(request.research) };
 }
 
@@ -207,12 +208,10 @@ async function callGeminiInteractions(
 ): Promise<ProviderResult> {
   const key = getApiKey(config);
   if (!key) throw new Error(`${config.name} key is not configured`);
-
   const model = getModel(config);
   if (!model) throw new Error(`${config.name} model is not configured`);
 
   const input = request.messages.map((message) => `${message.role.toUpperCase()}: ${message.content}`).join("\n\n");
-
   const response = await postJson(
     config.base_url,
     {
@@ -237,17 +236,10 @@ async function callGeminiInteractions(
     throw error;
   }
 
-  const payload = (await response.json()) as {
-    output_text?: string;
-    steps?: Array<{ type?: string }>;
-  };
+  const payload = (await response.json()) as { output_text?: string };
   const reply = payload.output_text?.trim() || "";
   if (!reply) throw new Error(`${config.name} returned an empty response`);
-
-  return {
-    reply,
-    researchUsed: Boolean(request.research),
-  };
+  return { reply, researchUsed: Boolean(request.research) };
 }
 
 async function callProvider(config: ProviderConfig, request: RouteRequest, timeoutMs: number): Promise<ProviderResult> {
@@ -261,16 +253,14 @@ async function callProvider(config: ProviderConfig, request: RouteRequest, timeo
   }
 }
 
-export class KiloRouter {
+export class GodRouter {
   async route(request: RouteRequest): Promise<RouteResult> {
     const config = await loadConfig();
     const lane = config.lanes[request.lane];
     if (!lane) throw new Error(`Lane ${request.lane} not found`);
 
     const providers = lane.providers.filter((provider) => {
-      const model = getModel(provider);
-      const key = getApiKey(provider);
-      if (!model || (!key && provider.privacy === "cloud")) return false;
+      if (!providerEnabled(provider)) return false;
       if (request.research && !provider.supports_web_search) return false;
       return true;
     });
@@ -284,6 +274,7 @@ export class KiloRouter {
 
     for (const provider of providers.slice(0, config.selection.max_attempts_per_request)) {
       attempts += 1;
+      const started = Date.now();
       try {
         const result = await callProvider(provider, request, config.selection.timeout_ms);
         console.info(JSON.stringify({
@@ -294,6 +285,8 @@ export class KiloRouter {
           status: "success",
           research: result.researchUsed,
           attempts,
+          latency_ms: Date.now() - started,
+          runtime: isLocalRuntime ? "local" : "cloud",
         }));
         return {
           reply: result.reply,
@@ -313,16 +306,39 @@ export class KiloRouter {
           status: "failed",
           retryable: typeof status === "number" ? isRetryable(status, config) : true,
           httpStatus: status,
+          latency_ms: Date.now() - started,
+          runtime: isLocalRuntime ? "local" : "cloud",
         }));
-
-        if (typeof status === "number" && !isRetryable(status, config)) {
-          break;
-        }
+        if (typeof status === "number" && !isRetryable(status, config)) break;
       }
     }
 
     throw new Error(`All Worker Agent providers failed for lane=${request.lane}: ${lastError instanceof Error ? lastError.message : "unknown error"}`);
   }
+
+  async status() {
+    const config = await loadConfig();
+    return {
+      runtime: isLocalRuntime ? "local" : "cloud",
+      lanes: Object.fromEntries(
+        Object.entries(config.lanes).map(([name, lane]) => [
+          name,
+          {
+            priority: lane.priority,
+            providers: lane.providers.map((provider) => ({
+              name: provider.name,
+              model: getModel(provider),
+              enabled: providerEnabled(provider),
+              localOnly: Boolean(provider.local_only),
+              webSearch: provider.supports_web_search,
+              costClass: provider.cost_class,
+            })),
+          },
+        ]),
+      ),
+    };
+  }
 }
 
-export const kiloRouter = new KiloRouter();
+export const godRouter = new GodRouter();
+export const kiloRouter = godRouter;
