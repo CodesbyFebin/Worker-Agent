@@ -21,19 +21,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed",
-    "test:e2e:debug": "playwright test --debug",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:report": "playwright show-report",
     "coverage": "vitest run --coverage && open coverage/index.html",
     "build": "npm --prefix server run build && npm --prefix client run build",
-    "build:docs": "npx vitepress build docs",
     "validate": "npm run typecheck && npm run lint && npm run test && npm run build",
     "validate:ci": "npm run typecheck && npm run lint && npm run test:coverage && npm run build",
-    "validate:e2e": "npm run test:e2e",
-    "validate:accessibility": "echo 'Run axe-core on browser'",
-    "release": "npm run validate:ci && npm version ${{ args.version }} && git push && git push --tags",
     "db:push": "npx drizzle-kit push",
     "db:generate": "npx drizzle-kit generate",
     "start:api": "npm --prefix server start:api",
@@ -76,12 +67,9 @@
     "url": "https://github.com/Cyberteckmaster/Worker-Agent/issues"
   },
   "devDependencies": {
-    "@playwright/test": "^1.47.0",
-    "drizzle-kit": "^0.23.5",
+    "drizzle-kit": "^0.31.10",
     "sitemap": "^7.1.0",
-    "vitest": "^4.1.10",
-    "vitest-coverage-merge": "^2.0.5",
-    "vitest-coverage-webapp": "^0.5.0"
+    "vitest": "^4.1.10"
   },
   "engines": {
     "node": ">=20.0.0"
