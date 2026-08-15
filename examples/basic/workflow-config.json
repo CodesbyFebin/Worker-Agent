@@ -1,0 +1,40 @@
+{
+  "name": "content-creation-pipeline",
+  "description": "Basic content creation workflow: research → write → review → publish",
+  "steps": [
+    {
+      "id": "1",
+      "name": "Research Phase",
+      "agent": "researcher",
+      "input": {
+        "topic": "AI tools in 2024",
+        "maxSources": 5
+      },
+      "timeout": 60000
+    },
+    {
+      "id": "2",
+      "name": "Content Creation",
+      "agent": "writer",
+      "dependsOn": ["1"],
+      "input": {
+        "topic": "AI tools in 2024",
+        "format": "youtube-video",
+        "lengthMinutes": 10
+      }
+    },
+    {
+      "id": "3",
+      "name": "Review Phase",
+      "agent": "reviewer",
+      "dependsOn": ["2"]
+    },
+    {
+      "id": "4",
+      "name": "Publish",
+      "agent": "publisher",
+      "dependsOn": ["3"],
+      "approveBeforeRun": true
+    }
+  ]
+}

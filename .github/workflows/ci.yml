@@ -8,7 +8,7 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -27,8 +27,10 @@ jobs:
         run: npm --prefix server ci
 
       - name: Install client dependencies
-        # client/ has no package-lock.json yet, so npm ci would fail.
         run: npm --prefix client install --no-audit --no-fund
+
+      - name: Security - Dependency audit
+        run: npm audit --audit-level=moderate
 
       - name: Typecheck server
         run: npm --prefix server run typecheck
@@ -36,20 +38,61 @@ jobs:
       - name: Typecheck client
         run: npm --prefix client run typecheck
 
-      - name: Lint server (optional)
+      - name: Lint server
         run: npm --prefix server run lint --if-present
 
-      - name: Lint client (optional)
+      - name: Lint client
         run: npm --prefix client run lint --if-present
 
-      - name: Test server (optional)
-        run: npm --prefix server run test --if-present
-
-      - name: Test client (optional)
-        run: npm --prefix client run test --if-present
+      - name: Run tests
+        run: npm run test
 
       - name: Build server
         run: npm --prefix server run build
 
       - name: Build client
         run: npm --prefix client run build
+
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-on: none
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript, typescript
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  publish:
+    needs: [validate]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish to GitHub Packages (if applicable)
+        # Add npm publish step if publishing packages

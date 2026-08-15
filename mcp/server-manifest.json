@@ -1,0 +1,89 @@
+{
+  "name": "worker-agent-cloud",
+  "version": "2.0.0",
+  "description": "Worker Agent.Cloud — Mission Control for AI-powered content networks. Research trends, create content, enforce governance, run channels, and learn from every result.",
+  "repository": "https://github.com/Cyberteckmaster/Worker-Agent",
+  "homepage": "https://workeragent.cloud",
+  "license": "MIT",
+  "author": "Worker Agent",
+  "keywords": ["ai-agents", "content-automation", "research", "multi-agent", "workflow-engine", "youtube", "tiktok", "saas", "ai-content", "automation"],
+  "mcpCapabilities": {
+    "type": "client",
+    "description": "MCP client connectivity for discovering and invoking external MCP tools",
+    "transports": ["http", "stdio"],
+    "supportedOperations": ["initialize", "tools/list", "tools/call", "resources/list", "resources/read"],
+    "integrationPoints": ["tool-gateway", "agent-system", "workflow-engine"],
+    "configurationSchema": {
+      "name": "string - Human-readable server name",
+      "transport": "http | stdio",
+      "endpoint": "string - URL for HTTP or command for stdio",
+      "config": "JSON string with headers, timeout, args, envKeys"
+    },
+    "securityControls": {
+      "transportSecurity": "HTTPS enforced for HTTP endpoints",
+      "sandboxing": "Tool calls subject to organization-level allowlists",
+      "credentialManagement": "Env var references only, never plaintext",
+      "inputValidation": "JSON Schema validation for tool inputs",
+      "auditLogging": "All MCP invocations logged via toolInvocations table"
+    }
+  },
+  "architecture": {
+    "client": "React 19 + Vite 5 + Tailwind 4 + tRPC React Query",
+    "server": "Express 4 + tRPC 10 + Drizzle ORM + BullMQ",
+    "database": "MySQL (MariaDB) with Drizzle ORM",
+    "queue": "BullMQ + Redis",
+    "orchestration": "God Machine + Workflow Engine"
+  },
+  "routes": {
+    "health": "/health",
+    "ready": "/ready",
+    "metrics": "/metrics",
+    "events": "/events",
+    "trpc": "/trpc",
+    "rest": "/api/v1",
+    "webhooks": "/webhooks"
+  },
+  "features": {
+    "agentSystem": {
+      "roles": ["planner", "researcher", "writer", "reviewer", "coder", "qa", "publisher", "video_generator", "video_editor", "voiceover", "caption_hashtag", "seo"],
+      "workflowEngine": true,
+      "godMachineOrchestration": true
+    },
+    "publishing": {
+      "platforms": ["youtube", "tiktok", "instagram", "facebook", "x", "linkedin", "blogger"],
+      "autoMode": true
+    },
+    "research": {
+      "providers": ["tavily", "brave", "serper"],
+      "claimValidation": true
+    },
+    "media": {
+      "videoGeneration": ["pollinations", "ffmpeg"],
+      "tts": ["streamelements"]
+    },
+    "mcp": {
+      "clientOnly": true,
+      "discovery": true,
+      "toolInvocation": true,
+      "resourceDiscovery": true
+    }
+  },
+  "database": {
+    "tables": [
+      "users", "sessions", "organizations", "organizationMembers", "roles",
+      "scripts", "script_sections", "generated_metadata", "claim_ledger",
+      "agent_tasks", "agent_events", "agent_worktrees", "content_campaigns",
+      "agent_definitions", "agent_versions", "agent_executions",
+      "workflow_definitions", "workflow_versions", "workflow_runs", "workflow_step_runs",
+      "tool_definitions", "tool_invocations", "mcp_servers",
+      "artifacts", "artifact_versions", "evidence_snapshots", "evidence_sources",
+      "approval_requests", "security_events", "api_keys", "webhooks"
+    ]
+  },
+  "aiProviders": ["anthropic", "openai", "google", "groq", "nvidia", "openrouter", "gemini", "ollama", "pollinations"],
+  "rateLimiting": {
+    "api": "300 requests / 60 seconds per IP",
+    "configurable": true,
+    "productionNote": "Uses in-process memory limits. Redis-backed recommended for multi-replica deployments."
+  }
+}

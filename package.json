@@ -1,7 +1,7 @@
 {
   "name": "worker-agent-cloud",
   "version": "2.0.0",
-  "description": "Worker Agent.Cloud — Mission Control for AI-powered content networks. Research trends, create content, enforce governance, run channels, and learn from every result.",
+  "description": "Worker Agent.Cloud — Mission Control for AI-powered content networks. Research trends, create content, enforce governance, run channels, and learn from every result. Includes MCP client for connecting external Model Context Protocol servers.",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -16,6 +16,7 @@
     "typecheck": "npm --prefix server run typecheck && npm --prefix client run typecheck",
     "lint": "npm --prefix server run lint --if-present && npm --prefix client run lint --if-present",
     "test": "vitest run",
+    "test:watch": "vitest",
     "build": "npm --prefix server run build && npm --prefix client run build",
     "validate": "npm run typecheck && npm run lint && npm run test && npm run build",
     "db:push": "npx drizzle-kit push",
@@ -27,17 +28,30 @@
   "keywords": [
     "ai-agents",
     "content-automation",
-    "research",
-    "multi-agent",
-    "workflow-engine",
-    "youtube",
-    "tiktok",
-    "saas",
     "ai-content",
-    "automation"
+    "youtube-api",
+    "tiktok-api",
+    "multi-platform",
+    "workflow-engine",
+    "ai-workflow",
+    "model-context-protocol",
+    "mcp-client",
+    "research-automation",
+    "video-generation",
+    "seo-automation",
+    "social-media-publishing",
+    "agentic-system"
   ],
   "author": "Worker Agent",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Cyberteckmaster/Worker-Agent.git"
+  },
+  "homepage": "https://workeragent.cloud",
+  "bugs": {
+    "url": "https://github.com/Cyberteckmaster/Worker-Agent/issues"
+  },
   "devDependencies": {
     "drizzle-kit": "^0.23.5",
     "vitest": "^4.1.10"
