@@ -1,64 +1,48 @@
 {
-  "name": "youtube-cc-os",
-  "version": "1.0.0",
-  "description": "Content Creator Operating System - Multi-channel YouTube automation with AI-powered trend prediction, content generation, and monetization optimization",
-  "main": "src/index.js",
+  "name": "worker-agent-cloud",
+  "version": "2.0.0",
+  "description": "Worker Agent.Cloud — Mission Control for AI-powered content networks. Research trends, create content, enforce governance, run channels, and learn from every result.",
+  "private": true,
   "type": "module",
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
-    "start": "node src/index.js",
-    "orchestrator": "node src/orchestrator/master.js",
-    "dashboard": "node src/cli/dashboard.js",
-    "generate": "node src/cli/generate.js",
-    "analyze": "node src/cli/analyze.js",
-    "dev": "nodemon src/index.js",
-    "test": "echo \"Testing not yet implemented\"",
-    "setup": "node scripts/setup.js"
+    "dev": "node scripts/start-dev.mjs",
+    "dev:api": "npm --prefix server run dev",
+    "dev:worker": "npm --prefix server run dev:worker",
+    "dev:web": "npm --prefix client run dev",
+    "typecheck": "npm --prefix server run typecheck && npm --prefix client run typecheck",
+    "lint": "npm --prefix server run lint --if-present && npm --prefix client run lint --if-present",
+    "test": "vitest run",
+    "build": "npm --prefix server run build && npm --prefix client run build",
+    "validate": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "db:push": "npx drizzle-kit push",
+    "db:generate": "npx drizzle-kit generate",
+    "start:api": "npm --prefix server start:api",
+    "start:worker": "npm --prefix server start:worker",
+    "local:infra": "docker compose up -d mysql redis minio"
   },
   "keywords": [
+    "ai-agents",
+    "content-automation",
+    "research",
+    "multi-agent",
+    "workflow-engine",
     "youtube",
-    "automation",
-    "content-creation",
-    "ai",
-    "monetization",
-    "trend-analysis",
-    "multi-channel"
+    "tiktok",
+    "saas",
+    "ai-content",
+    "automation"
   ],
-  "author": "CC-OS Team",
+  "author": "Worker Agent",
   "license": "MIT",
-  "dependencies": {
-    "axios": "^1.6.7",
-    "chalk": "^5.3.0",
-    "cheerio": "^1.0.0-rc.12",
-    "cli-table3": "^0.6.3",
-    "commander": "^12.0.0",
-    "dotenv": "^16.4.1",
-    "drizzle-orm": "^0.33.0",
-    "enquirer": "^2.4.1",
-    "express": "^4.18.2",
-    "figlet": "^1.7.0",
-    "google-auth-library": "^9.6.3",
-    "googleapis": "^133.0.0",
-    "jimp": "^0.22.10",
-    "lodash": "^4.17.21",
-    "moment": "^2.30.1",
-    "node-cron": "^3.0.3",
-    "openai": "^4.28.0",
-    "ora": "^8.0.1",
-    "playwright": "^1.41.2",
-    "puppeteer": "^22.0.0",
-    "sentiment": "^5.0.2",
-    "sharp": "^0.33.2",
-    "uuid": "^9.0.1",
-    "winston": "^3.11.0",
-    "youtube-transcript": "^1.1.0",
-    "ytdl-core": "^4.11.5",
-    "zod": "^4.4.3"
-  },
   "devDependencies": {
-    "nodemon": "^3.0.3",
+    "drizzle-kit": "^0.23.5",
     "vitest": "^4.1.10"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   }
 }

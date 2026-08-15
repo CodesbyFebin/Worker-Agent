@@ -18,11 +18,11 @@ type LandingPageProps = {
 };
 
 const systems = [
-  { title: "Intelligence", icon: BrainCircuit, features: ["Trend forecasting", "Competitor intelligence", "Retention Genome"] },
-  { title: "Creation", icon: Video, features: ["Script DNA", "Hook simulation", "Thumbnail intelligence"] },
-  { title: "Growth", icon: ChartNoAxesCombined, features: ["A/B experiments", "Timing optimization", "Playlist intelligence"] },
-  { title: "Economics", icon: CircleDollarSign, features: ["RPM intelligence", "Per-video P&L", "Sponsorship signals"] },
-  { title: "Governance", icon: ShieldCheck, features: ["Sanity Shield", "Copyright checks", "Approval + audit"] },
+  { title: "Intelligence", icon: BrainCircuit, features: ["Trend forecasting", "Competitor analysis", "Market scoring"] },
+  { title: "Creation", icon: Video, features: ["Agent workflows", "Content generation", "Asset intelligence"] },
+  { title: "Growth", icon: ChartNoAxesCombined, features: ["A/B experiments", "Optimization", "Channel analytics"] },
+  { title: "Economics", icon: CircleDollarSign, features: ["ROI intelligence", "Budget allocation", "Revenue signals"] },
+  { title: "Governance", icon: ShieldCheck, features: ["Compliance", "Brand safety", "Audit + approvals"] },
   { title: "Autonomy", icon: Zap, features: ["Provider routing", "Pipeline orchestration", "Learning loops"] },
 ] as const;
 
@@ -35,10 +35,10 @@ const loop = [
 ] as const;
 
 const demoStats = [
-  ["836+", "Retention patterns"],
-  ["14K+", "Signals analyzed daily"],
-  ["91%", "Avg. retention lift"],
-  ["$82", "Avg. RPM increase"],
+  ["500+", "AI agents orchestrated"],
+  ["10K+", "Signals processed daily"],
+  ["89%", "Governance compliance"],
+  ["4.2s", "Avg. task latency"],
 ] as const;
 
 export function LandingPage({ onLaunchApp }: LandingPageProps) {
@@ -96,7 +96,7 @@ export function LandingPage({ onLaunchApp }: LandingPageProps) {
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </button>
                 <a href="#systems" className="inline-flex min-w-[170px] items-center justify-center rounded-lg border border-white/[0.16] bg-black/20 px-6 py-3.5 text-[13px] font-semibold text-white hover:border-[#7164ff]/60 hover:bg-[#7164ff]/5">
-                  Explore CC-OS
+                  Explore Systems
                 </a>
               </div>
             </div>
@@ -189,7 +189,7 @@ export function LandingPage({ onLaunchApp }: LandingPageProps) {
 
         <section id="systems" className="mx-auto max-w-[1200px] px-5 py-24 md:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="font-[var(--font-mono)] text-[9px] uppercase tracking-[0.22em] text-[#8175ff]">CC-OS control plane</p>
+            <p className="font-[var(--font-mono)] text-[9px] uppercase tracking-[0.22em] text-[#8175ff]">Worker Agent control plane</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-white md:text-5xl">Six systems. One operating loop.</h2>
             <p className="mt-4 text-sm leading-6 text-[var(--color-text-muted)]">A governed content operating system that connects intelligence, creation, growth, economics, safety and autonomy into one command surface.</p>
           </div>

@@ -19,7 +19,7 @@ type Message = { role: "user" | "assistant"; content: string };
 
 const welcomeMessage: Message = {
   role: "assistant",
-  content: "Mission Control online. I can research opportunities, decompose governed missions, interpret performance, and route actions through CC-OS. What should we work on today?",
+  content: "Mission Control online. I can research opportunities, decompose governed missions, interpret performance, and route actions through Worker Agent. What should we work on today?",
 };
 
 const starterPrompts = [
@@ -64,7 +64,7 @@ export function CommandCenter() {
         ...current,
         {
           role: "assistant",
-          content: `Mission created successfully. Campaign ${result.id ?? "is now queued"}. The CC-OS execution pipeline is active and governed; publication remains subject to the existing human approval gate.`,
+          content: `Mission created successfully. Campaign ${result.id ?? "is now queued"}. The Worker Agent execution pipeline is active and governed; publication remains subject to the existing human approval gate.`,
         },
       ]);
     },
