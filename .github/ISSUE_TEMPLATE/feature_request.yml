@@ -1,0 +1,33 @@
+name: Feature Request
+description: Suggest a feature for Worker Agent.Cloud
+title: '[Feature] '
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your interest in improving Worker Agent.Cloud!
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A brief description of the proposed feature
+      placeholder: Enter a clear, concise summary
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Why is this needed?
+      description: What problem does this feature solve?
+      placeholder: Describe the use case and problem you're trying to solve
+  - type: textarea
+    id: details
+    attributes:
+      label: Implementation Details
+      description: Technical details, API design, UI considerations
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples/Illustrations
+      description: Screenshots, mockups, or other examples

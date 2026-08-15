@@ -1,0 +1,39 @@
+{
+  "name": "research-and-reviewer",
+  "description": "Researcher agent with claim validation, followed by reviewer",
+  "agents": [
+    {
+      "name": "researcher",
+      "role": "researcher",
+      "provider": "anthropic",
+      "model": "claude-3-7-sonnet-20250219",
+      "instructions": "You are a research expert. Extract claims and verify sources.",
+      "capabilities": ["search", "claim_extraction", "source_verification"],
+      "tools": ["search_web", "extract_claims", "verify_claim"]
+    },
+    {
+      "name": "reviewer",
+      "role": "reviewer",
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022",
+      "instructions": "Review content for accuracy, compliance, and quality.",
+      "capabilities": ["review", "policy_check", "quality_score"],
+      "tools": ["check_claims", "scan_policy", "rate_quality"]
+    }
+  ],
+  "workflow": {
+    "start": "research",
+    "routes": {
+      "research": {
+        "agent": "researcher",
+        "onComplete": "review",
+        "onError": "dead_letter"
+      },
+      "review": {
+        "agent": "reviewer",
+        "onApprove": "publish",
+        "onReject": "revision"
+      }
+    }
+  }
+}

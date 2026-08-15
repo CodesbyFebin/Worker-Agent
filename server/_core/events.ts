@@ -19,6 +19,24 @@ export interface AgentEvent {
 
 export type ScopedAgentEvent = AgentEvent & { organizationId: string | null };
 
+/**
+ * Transient progress for interactive Mission Control research requests.
+ * These events intentionally share the existing org-scoped SSE transport but
+ * are not written to agent_events because chat research is not an agent task.
+ */
+export interface ResearchStreamEvent {
+  type: "research";
+  organizationId: string;
+  runId: string;
+  phase: "started" | "completed" | "failed";
+  message: string;
+  provider?: string;
+  model?: string;
+  attempts?: number;
+}
+
+export type ScopedEvent = ScopedAgentEvent | ResearchStreamEvent;
+
 const emitter = new EventEmitter();
 emitter.setMaxListeners(50);
 
@@ -47,15 +65,20 @@ export async function publishEvent(event: AgentEvent): Promise<void> {
   emitter.emit("event", scoped);
 }
 
+/** Publishes interactive research progress to the existing live SSE stream. */
+export function publishResearchEvent(event: ResearchStreamEvent): void {
+  emitter.emit("event", event);
+}
+
 /**
  * Subscribe to live events. Pass organizationId to receive only that tenant's
  * events; omit to receive none (callers must scope explicitly).
  */
 export function subscribeToEvents(
-  handler: (event: ScopedAgentEvent) => void,
+  handler: (event: ScopedEvent) => void,
   organizationId?: string | null,
 ): () => void {
-  const wrapped = (event: ScopedAgentEvent) => {
+  const wrapped = (event: ScopedEvent) => {
     if (!organizationId) return;
     if (event.organizationId !== organizationId) return;
     handler(event);

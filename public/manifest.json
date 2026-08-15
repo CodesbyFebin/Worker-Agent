@@ -1,0 +1,22 @@
+{
+  "name": "Worker Agent.Cloud",
+  "short_name": "WorkerAgent",
+  "description": "Mission Control for AI-powered content networks",
+  "icons": [
+    {
+      "src": "/favicon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/favicon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "theme_color": "#1a1a2e",
+  "background_color": "#0f0f1a",
+  "display": "standalone",
+  "start_url": "/",
+  "orientation": "portrait"
+}

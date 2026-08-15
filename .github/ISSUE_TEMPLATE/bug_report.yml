@@ -1,0 +1,49 @@
+name: Bug Report
+description: Report a bug in Worker Agent.Cloud
+title: '[Bug] '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug!
+        
+        Please fill out the following information to help us investigate.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The version you're using (if applicable)
+  - type: textarea
+    id: description
+    attributes:
+      label: Summary
+      description: A brief summary of what went wrong
+      placeholder: Enter a clear, concise description
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Provide steps to reproduce the issue
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+        3. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs/Screenshots
+      description: Add any relevant logs, error messages, or screenshots
+      placeholder: Paste logs or attach screenshots
