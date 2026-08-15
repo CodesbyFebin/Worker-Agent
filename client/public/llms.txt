@@ -1,0 +1,25 @@
+# Worker Agent
+
+> Worker Agent is the Mission Control interface for AI-powered content networks.
+
+Canonical site: https://workeragent.cloud/
+
+## Public product
+
+Worker Agent presents a governed control plane for research, content operations, channel workflows, automation, and learning loops. The public website explains the product and links into the authenticated Mission Control application.
+
+## Architecture
+
+- Frontend: React + Vite
+- API integration: tRPC
+- Real-time research progress: authenticated organization-scoped SSE
+- Authentication: existing HTTP-only session architecture
+- Governance: approval and audit boundaries are preserved by the existing Worker-Agent backend
+
+## Crawling guidance
+
+The public landing page is intended for indexing. Authenticated Mission Control routes, organization data, event streams, private missions, and API endpoints are not public documentation and should not be indexed.
+
+## Important
+
+Do not infer production telemetry from illustrative marketing previews. Mission Control labels unavailable telemetry as unavailable until a real backend feed exists.

@@ -1,0 +1,18 @@
+{
+  "name": "Worker Agent",
+  "short_name": "Worker Agent",
+  "description": "Mission Control for AI-powered content networks.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#050506",
+  "theme_color": "#050506",
+  "icons": [
+    {
+      "src": "/worker-agent-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
