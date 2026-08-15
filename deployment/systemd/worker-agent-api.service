@@ -1,0 +1,38 @@
+# Worker Agent — systemd Service Units
+#
+# Usage:
+#   sudo cp worker-agent-api.service /etc/systemd/system/
+#   sudo cp worker-agent-worker.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now worker-agent-api
+#   sudo systemctl enable --now worker-agent-worker
+
+[Unit]
+Description=Worker Agent API Server
+After=network-online.target mysql.service redis-server.service
+Wants=network-online.target
+Requires=mysql.service redis-server.service
+
+[Service]
+Type=simple
+User=workeragent
+Group=workeragent
+WorkingDirectory=/opt/worker-agent
+EnvironmentFile=/etc/worker-agent.env
+Environment=NODE_ENV=production
+Environment=WA_PROCESS_ROLE=api
+ExecStart=/usr/bin/node --env-file=/etc/worker-agent.env server/dist/_core/index.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/worker-agent/output
+
+[Install]
+WantedBy=multi-user.target

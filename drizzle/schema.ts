@@ -1588,3 +1588,53 @@ export const webhooks = mysqlTable(
   }),
 );
 
+/* -------------------------------------------------------------------------
+ * Phase 15 — White-Hat Compliance Engine
+ * ---------------------------------------------------------------------- */
+
+export const complianceVerdicts = mysqlTable(
+  "compliance_verdicts",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    organizationId: varchar("organization_id", { length: 36 })
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    resourceType: mysqlEnum("resource_type",
+      ["script", "video", "comment", "campaign", "metadata"]).notNull(),
+    resourceId: varchar("resource_id", { length: 36 }).notNull(),
+    checkKey: varchar("check_key", { length: 64 }).notNull(),
+    verdict: mysqlEnum("verdict", ["pass", "review", "block"]).notNull(),
+    evidenceJson: text("evidence_json").notNull(),
+    policyVersion: int("policy_version").notNull().default(1),
+    checkedBy: mysqlEnum("checked_by", ["engine", "human"]).notNull().default("engine"),
+    decidedBy: varchar("decided_by", { length: 36 }).references(() => users.id),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    expiresAt: timestamp("expires_at"),
+  },
+  (table) => ({
+    orgIdx: index("compliance_verdicts_organization_id_idx").on(table.organizationId),
+    resIdx: index("compliance_verdicts_resource_idx").on(table.resourceType, table.resourceId),
+    keyIdx: index("compliance_verdicts_check_key_idx").on(table.checkKey),
+  }),
+);
+
+export const quotaLedger = mysqlTable(
+  "quota_ledger",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    organizationId: varchar("organization_id", { length: 36 })
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    provider: varchar("provider", { length: 64 }).notNull(),
+    channelRef: varchar("channel_ref", { length: 64 }),
+    operation: varchar("operation", { length: 128 }).notNull(),
+    quotaUnits: int("quota_units").notNull(),
+    requestId: varchar("request_id", { length: 64 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    orgIdx: index("quota_ledger_organization_id_idx").on(table.organizationId),
+    provIdx: index("quota_ledger_provider_created_idx").on(table.provider, table.createdAt),
+  }),
+);
+

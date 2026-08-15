@@ -1,55 +1,48 @@
-name: CI
+name: CI Pipeline
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, rc-*]
   pull_request:
+    branches: [main]
 
 jobs:
-  validate:
+  typecheck-and-test:
+    name: Typecheck & Test (Node 20)
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    strategy:
+      matrix:
+        node-version: [20.x]
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: npm
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
-      - name: Install root dependencies
-        run: npm ci
+      - name: Install Root Dependencies
+        run: npm ci --ignore-scripts
 
-      - name: Install server dependencies
+      - name: Install Server Dependencies
         run: npm --prefix server ci
 
-      - name: Install client dependencies
-        # client/ has no package-lock.json yet, so npm ci would fail.
-        run: npm --prefix client install --no-audit --no-fund
+      - name: Install Client Dependencies
+        run: npm --prefix client ci
 
-      - name: Typecheck server
+      - name: Typecheck Server
         run: npm --prefix server run typecheck
 
-      - name: Typecheck client
+      - name: Typecheck Client
         run: npm --prefix client run typecheck
 
-      - name: Lint server (optional)
-        run: npm --prefix server run lint --if-present
+      - name: Run Server Tests (Vitest)
+        run: npm --prefix server run test
+        env:
+          DATABASE_URL: "mysql://root:password@localhost:3306/worker_agent_test"
+          REDIS_URL: "redis://localhost:6379"
 
-      - name: Lint client (optional)
-        run: npm --prefix client run lint --if-present
-
-      - name: Test server (optional)
-        run: npm --prefix server run test --if-present
-
-      - name: Test client (optional)
-        run: npm --prefix client run test --if-present
-
-      - name: Build server
-        run: npm --prefix server run build
-
-      - name: Build client
+      - name: Build Client (Vite)
         run: npm --prefix client run build
