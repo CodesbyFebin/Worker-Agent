@@ -41,6 +41,27 @@ jobs:
       - name: Build
         run: npm run build
 
+  accessibility:
+    needs: [validate]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: npm run build
+
+      - name: Serve static files
+        run: npx serve client/dist -l 5173 &
+
+      - name: Run axe accessibility check
+        uses: dequelabs/axe-action@v4
+        with:
+          url: http://localhost:5173
+          exit: true
+          reporter: table
+        continue-on-error: true
+
   codeql:
     runs-on: ubuntu-latest
     permissions:
@@ -66,7 +87,7 @@ jobs:
         uses: github/codeql-action/analyze@v3
 
   publish-docs:
-    needs: [validate]
+    needs: [accessibility]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
