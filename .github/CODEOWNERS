@@ -1,0 +1,23 @@
+# Code Owners for Worker Agent.Cloud
+
+# Core packages
+/server		@Cyberteckmaster
+/client		@Cyberteckmaster
+/docs		@Cyberteckmaster
+
+# Documentation
+/docs/architecture.md	@Cyberteckmaster
+/docs/getting-started.md	@Cyberteckmaster
+/docs/configuration.md	@Cyberteckmaster
+
+# Tests
+/server/tests	@Cyberteckmaster
+/vitest.config.ts	@Cyberteckmaster
+
+# CI/CD
+/.github/workflows	@Cyberteckmaster
+/.github/dependabot.yml	@Cyberteckmaster
+/package.json	@Cyberteckmaster
+
+# Default
+*	@Cyberteckmaster

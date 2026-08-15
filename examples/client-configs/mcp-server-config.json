@@ -1,0 +1,53 @@
+{
+  "name": "Memory MCP Server",
+  "description": "MCP server for memory storage and recall",
+  "transport": "http",
+  "endpoint": "http://localhost:8080/mcp",
+  "config": {
+    "timeout": 30000,
+    "headers": {
+      "Authorization": "Bearer ${MEMORY_API_KEY}"
+    },
+    "retry": {
+      "maxAttempts": 3,
+      "delay": 1000
+    }
+  },
+  "enabled": true,
+  "tools": [
+    {
+      "name": "memory/create",
+      "description": "Store a memory with content and optional tags",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"},
+          "content": {"type": "string"},
+          "tags": {"type": "array", "items": {"type": "string"}}
+        },
+        "required": ["content"]
+      }
+    },
+    {
+      "name": "memory/read",
+      "description": "Retrieve a memory by ID",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string"}
+        },
+        "required": ["id"]
+      }
+    },
+    {
+      "name": "memory/list",
+      "description": "List all memories with optional tag filter",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tag": {"type": "string"}
+        }
+      }
+    }
+  ]
+}

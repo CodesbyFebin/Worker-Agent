@@ -1,0 +1,327 @@
+# Worker Agent Cloud — Full Documentation
+
+> Worker Agent.Cloud is the autonomous operating system for AI content networks: research trends, create content, enforce governance, run channels, and learn from every result.
+
+## Table of Contents
+
+1. [Product Overview](#product-overview)
+2. [Architecture](#architecture)
+3. [Core Concepts](#core-concepts)
+4. [API Reference](#api-reference)
+5. [Agents](#agents)
+6. [Pipelines](#pipelines)
+7. [Governance](#governance)
+
+---
+
+## Product Overview
+
+Worker Agent.Cloud is a Mission Control interface for AI content networks. It connects research, creation, governance, economics, and autonomy into a single operating loop.
+
+### Key Features
+
+- **Research**: Trend forecasting, competitor analysis, market scoring across live data sources.
+- **Creation**: Agent workflows, content generation, asset intelligence.
+- **Governance**: Compliance, brand safety, audit trails, and human approval gates.
+- **Growth**: A/B experimentation, timing optimization, channel analytics.
+- **Economics**: ROI intelligence, budget allocation, revenue signal tracking.
+- **Autonomy**: Provider routing, pipeline orchestration, continuous learning loops.
+
+### Mission Control
+
+The authenticated web application at `/dashboard` provides a conversational command surface where users interact with AI agents through natural language. Key capabilities:
+
+- Decompose content missions from market opportunities
+- Route actions through governed execution pipelines
+- Interpret performance telemetry and recommend next actions
+- Conduct deep web research with real-time SSE streaming
+
+---
+
+## Architecture
+
+### Stack
+
+| Layer        | Technology                          |
+|-------------|--------------------------------------|
+| Frontend    | React 19 + Vite + TypeScript        |
+| Styling     | Tailwind CSS (custom dark theme)    |
+| State       | React Query                         |
+| API Client  | tRPC (type-safe RPC)                |
+| Backend     | Bun / Elysia / tRPC                 |
+| Database    | PostgreSQL (primary)                |
+| Cache       | Redis (rate-limiting, queues)       |
+| Real-time   | Server-Sent Events (SSE)            |
+| Hosting     | Vercel (frontend), Docker/Bun (API) |
+
+### Project Structure
+
+```
+.
+├── client/                  # React frontend (Vite + TypeScript)
+│   ├── src/
+│   │   ├── marketing/       # LandingPage, public marketing pages
+│   │   ├── mission-control/ # CommandCenter, authenticated app
+│   │   ├── features/         # Feature modules (agents, pipelines, etc.)
+│   │   ├── lib/              # tRPC client, utils
+│   │   ├── hooks/            # Custom React hooks
+│   │   └── App.tsx
+│   └── index.html           # PWA shell with OG tags + schema.org
+├── server/                  # Backend API (tRPC routers)
+│   ├── routers/             # 18 tRPC routers
+│   │   ├── _app.ts          # Router registry
+│   │   ├── auth.ts
+│   │   ├── script.ts
+│   │   ├── ledger.ts
+│   │   ├── godMachine.ts
+│   │   ├── campaign.ts
+│   │   ├── ide.ts
+│   │   ├── connectors.ts
+│   │   ├── settings.ts
+│   │   ├── pipeline.ts
+│   │   ├── workflow.ts
+│   │   ├── knowledge.ts
+│   │   ├── agents.ts
+│   │   ├── tools.ts
+│   │   ├── governance.ts
+│   │   ├── artifacts.ts
+│   │   ├── ops.ts
+│   │   ├── youtubeStudio.ts
+│   │   └── chat.ts
+│   └── _core/               # Core infrastructure
+├── deployment/              # Production deployment artifacts
+│   ├── rc1/                 # Release candidate 1
+│   │   ├── 001_worker_agent_baseline.sql
+│   │   ├── verify-schema.sql
+│   │   └── env.template
+│   ├── nginx/
+│   │   └── worker-agent.conf
+│   ├── systemd/
+│   │   ├── worker-agent-api.service
+│   │   └── worker-agent-worker.service
+│   └── scripts/
+│       └── bootstrap.sh
+├── drizzle/sql/             # Drizzle ORM migrations
+└── package.json             # Root workspace
+```
+
+### Data Flow
+
+1. User sends a message in Mission Control
+2. Request flows through tRPC router to backend agent
+3. Agent may stream SSE events back in real-time
+4. Results are stored in PostgreSQL
+5. Learning loop extracts patterns into Knowledge Base
+6. Patterns inform future agent decisions
+
+---
+
+## Core Concepts
+
+### Organizations
+
+All resources are scoped to an organization. Users belong to organizations with roles (owner, admin, editor, commenter, viewer).
+
+### Agents
+
+Autonomous AI workers with configurable models, providers, and instructions. Agents can be assigned to pipeline steps and execute tasks.
+
+### Pipelines
+
+Multi-step execution workflows composed of ordered steps (research, create, review, publish, monitor). Each step can be assigned an agent and has its own configuration.
+
+### Campaigns
+
+Time-bound content initiatives with budgets, start/end dates, and status tracking.
+
+### Connectors
+
+Platform integrations (YouTube, TikTok, Instagram, etc.) for content creation and analytics.
+
+### Knowledge Base
+
+Vector-backed storage for learned patterns, competitor intelligence, and market data. Supports semantic search via pgvector.
+
+---
+
+## API Reference
+
+### Authentication
+
+All API endpoints require authentication via HTTP-only session cookies. OAuth is supported through GitHub, Google, and Microsoft.
+
+### tRPC Routers
+
+| Router         | Purpose                              |
+|---------------|--------------------------------------|
+| auth          | Login, logout, session management   |
+| script        | Script generation and management    |
+| ledger        | Billing, subscriptions, costs     |
+| godMachine    | High-level orchestration engine     |
+| campaign      | Campaign CRUD + lifecycle         |
+| ide           | Idea generation and enrichment      |
+| connectors    | Platform integrations             |
+| settings      | Application settings              |
+| pipeline      | Pipeline and step management      |
+| workflow      | Workflow definitions and runs     |
+| knowledge     | Knowledge base + vector search    |
+| agents        | Agent configuration and runs      |
+| tools         | Tool integrations               |
+| governance    | Compliance and approval gates   |
+| artifacts     | Content assets and media        |
+| ops           | Operational metrics and health  |
+| youtubeStudio | YouTube Studio analytics        |
+| chat          | Conversational AI + SSE stream  |
+
+### SSE Endpoints
+
+- `GET /sse/research` — Real-time research progress events
+- `GET /sse/agents` — Agent status updates
+- `GET /sse/pipelines` — Pipeline execution events
+
+---
+
+## Agents
+
+Agents are autonomous AI workers configured with:
+
+- A **model** (GPT-4o, Claude 3.5, Gemini 2.5, etc.)
+- A **provider** (OpenAI, Anthropic, Google, OpenRouter, etc.)
+- **Instructions** (system prompt)
+- **Config** (temperature, max tokens, tools, etc.)
+
+### Agent Lifecycle
+
+```
+idle → running → completed   (normal)
+idle → running → error       (failure)
+idle → paused                (manual)
+```
+
+### Available Agents
+
+1. **Research Agent** — Trend analysis, competitor intelligence
+2. **Creation Agent** — Content generation, script writing
+3. **Governance Agent** — Compliance checking, brand safety
+4. **Optimization Agent** — Performance analysis, A/B testing
+
+---
+
+## Pipelines
+
+Pipelines are ordered workflows that automate content production:
+
+1. **Research** — Analyze market opportunities
+2. **Select** — Choose the best opportunity
+3. **Create** — Generate content assets
+4. **Govern** — Run compliance checks
+5. **Approve** — Human review (optional)
+6. **Publish** — Distribute to connected platforms
+7. **Measure** — Collect performance metrics
+8. **Learn** — Extract patterns for next cycle
+
+### Pipeline Statuses
+
+- draft → running → completed (success)
+- draft → running → failed (error)
+- Any → paused (manual)
+- Any → cancelled (manual)
+
+---
+
+## Governance
+
+Worker Agent enforces governance at every step:
+
+- **Sanity Shield**: AI-generated guardrails prevent hallucinated facts
+- **Copyright checks**: Scans for potential IP violations
+- **Approval gates**: Human review required before publish
+- **Audit trail**: Every action is logged with immutable timestamps
+- **Brand safety**: Ensures content aligns with brand guidelines
+
+---
+
+## Environment Configuration
+
+See `.env.example` for all available environment variables. Key variables:
+
+| Variable         | Required | Description                     |
+|-----------------|----------|---------------------------------|
+| DATABASE_URL    | Yes      | PostgreSQL connection string    |
+| REDIS_URL       | Yes      | Redis connection string         |
+| BETTER_AUTH_SECRET | Yes   | Session signing secret          |
+| OPENAI_API_KEY  | Optional | OpenAI API key                  |
+| ANTHROPIC_API_KEY | Optional | Anthropic API key             |
+| GOOGLE_API_KEY  | Optional | Google API key                  |
+| GITHUB_CLIENT_ID | Optional | GitHub OAuth client ID        |
+| GITHUB_CLIENT_SECRET | Optional | GitHub OAuth secret       |
+
+---
+
+## Deployment
+
+Production deployment uses Docker containers orchestrated via systemd. See the `deployment/` directory for:
+
+- `rc1/001_worker_agent_baseline.sql` — Database schema baseline
+- `rc1/verify-schema.sql` — Schema verification script
+- `rc1/env.template` — Environment template for production
+- `nginx/worker-agent.conf` — Nginx reverse proxy configuration
+- `systemd/worker-agent-api.service` — API server systemd unit
+- `systemd/worker-agent-worker.service` — Background worker systemd unit
+- `scripts/bootstrap.sh` — Server bootstrap script
+
+### Quick Start (Production)
+
+```bash
+# 1. Clone and build
+git clone https://github.com/CodesbyFebin/Worker-Agent
+cd Worker-Agent
+npm ci
+npm run build
+
+# 2. Configure environment
+cp deployment/rc1/env.template .env.production
+# Edit .env.production with your values
+
+# 3. Bootstrap server
+sudo bash deployment/scripts/bootstrap.sh
+
+# 4. Start services
+sudo systemctl start worker-agent-api
+sudo systemctl start worker-agent-worker
+```
+
+---
+
+## Development
+
+```bash
+# Install dependencies
+npm ci
+
+# Start dev servers (API + Web concurrently)
+npm run dev
+
+# Type checking
+npm run typecheck
+
+# Linting
+npm run lint
+
+# Tests
+npm run test
+
+# Build for production
+npm run build
+
+# Validate everything
+npm run validate
+```
+
+---
+
+## Support
+
+- **Documentation**: https://workeragent.cloud/docs
+- **GitHub Issues**: https://github.com/CodesbyFebin/Worker-Agent/issues
+- **Contact**: support@workeragent.cloud

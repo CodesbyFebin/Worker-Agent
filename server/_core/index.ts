@@ -9,6 +9,7 @@ import { env } from "./env";
 import { shutdownQueues } from "./queue";
 import { subscribeToEvents } from "./events";
 import { registerHealthRoutes } from "./health";
+import { registerRobotsRoutes } from "./robots";
 import { ensureAuthBootstrap } from "./auth/bootstrap";
 import { parseCookies, resolveSession } from "./auth/session";
 import { SESSION_COOKIE } from "./auth/permissions";
@@ -55,6 +56,7 @@ app.use((req, res, next) => {
 });
 
 registerHealthRoutes(app);
+registerRobotsRoutes(app);
 
 app.get("/metrics", (req, res) => {
   const accept = req.headers.accept ?? "";

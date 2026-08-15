@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /trpc
+Disallow: /events
+
+Sitemap: https://workeragent.cloud/sitemap.xml

@@ -1,0 +1,32 @@
+[Unit]
+Description=Worker Agent Cloud — API Server
+Documentation=https://workeragent.cloud/docs
+After=network.target postgresql.service redis.service
+
+[Service]
+Type=simple
+User=worker-agent
+Group=worker-agent
+WorkingDirectory=/opt/worker-agent/server
+EnvironmentFile=/opt/worker-agent/deployment/rc1/env.template
+
+# Use the built JS output
+ExecStart=/usr/bin/node /opt/worker-agent/server/dist/index.js
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+
+# Resource limits
+MemoryMax=2G
+CPUQuota=200%
+TasksMax=512
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/worker-agent/server/logs /tmp
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
