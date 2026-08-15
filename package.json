@@ -17,13 +17,22 @@
     "lint": "npm --prefix server run lint --if-present && npm --prefix client run lint --if-present",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "coverage": "vitest run --coverage && open coverage/index.html",
     "build": "npm --prefix server run build && npm --prefix client run build",
+    "build:docs": "echo 'Building documentation...'",
     "validate": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "validate:ci": "npm run typecheck && npm run lint && npm run test:coverage && npm run build",
+    "release": "npm run validate:ci && npm version ${{ args.version }} && git push && git push --tags",
     "db:push": "npx drizzle-kit push",
     "db:generate": "npx drizzle-kit generate",
     "start:api": "npm --prefix server start:api",
     "start:worker": "npm --prefix server start:worker",
-    "local:infra": "docker compose up -d mysql redis minio"
+    "local:infra": "docker compose up -d mysql redis minio",
+    "docker:build": "docker build -t worker-agent-cloud:latest .",
+    "docker:push": "docker push workeragentcloud/worker-agent-cloud:latest",
+    "docs:dev": "npx vitepress dev docs",
+    "docs:build": "npx vitepress build docs"
   },
   "keywords": [
     "ai-agents",
@@ -40,7 +49,10 @@
     "video-generation",
     "seo-automation",
     "social-media-publishing",
-    "agentic-system"
+    "agentic-system",
+    "video-processing",
+    "ai-assistant",
+    "llm-agents"
   ],
   "author": "Worker Agent",
   "license": "MIT",
@@ -54,7 +66,10 @@
   },
   "devDependencies": {
     "drizzle-kit": "^0.23.5",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "vitest-coverage-merge": "^2.0.5",
+    "vitest-coverage-webapp": "^0.5.0",
+    "sitemap": "^7.1.0"
   },
   "engines": {
     "node": ">=20.0.0"
