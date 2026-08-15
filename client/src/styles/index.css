@@ -1,130 +1,145 @@
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
 @import "tailwindcss";
 
-/*
- * Worker Agent.Cloud — Vibe theme
- * Reference: neon cyber / retrowave IDE aesthetic (magenta · cyan · lime on
- * deep purple-black). Semantic token names preserved so existing screens
- * inherit the palette without a mass class rewrite.
- *
- *   amber  → neon lime     — agent working / primary CTA
- *   teal   → electric cyan — verified / safe / secondary glow
- *   coral  → hot magenta   — failed / blocked / brand heat
- *   violet → vivid pink    — human action only
- */
+/* Worker Agent — cinematic operator console */
 @theme {
-  --color-ink: #05030c;
-  --color-surface: #0e0a18;
-  --color-surface-raised: #161022;
-  --color-line: #2a2040;
-  --color-text-primary: #f4f0ff;
-  --color-text-muted: #8b82a8;
-  --color-amber: #b8ff3c;
-  --color-teal: #00e8f0;
-  --color-coral: #ff3d8a;
-  --color-violet: #ff2bd6;
+  --color-ink: #050608;
+  --color-surface: #0a0c11;
+  --color-surface-raised: #10131b;
+  --color-surface-hover: #151927;
+  --color-line: #222734;
+  --color-line-strong: #343b4f;
+  --color-text-primary: #f7f7fb;
+  --color-text-secondary: #c8cbd4;
+  --color-text-muted: #7f8798;
+  --color-amber: #f2c94c;
+  --color-teal: #43d17a;
+  --color-coral: #f87171;
+  --color-violet: #6d5dfc;
 
-  --font-display: "Syne", ui-sans-serif, system-ui, sans-serif;
-  --font-body: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
 
 :root {
-  --glow-cyan: 0 0 20px rgba(0, 232, 240, 0.45), 0 0 48px rgba(0, 232, 240, 0.15);
-  --glow-magenta: 0 0 20px rgba(255, 61, 138, 0.45), 0 0 48px rgba(255, 45, 214, 0.18);
-  --glow-lime: 0 0 18px rgba(184, 255, 60, 0.4), 0 0 40px rgba(184, 255, 60, 0.12);
-  --border-neon: linear-gradient(135deg, #ff2bd6, #00e8f0, #b8ff3c);
+  --glow-violet: 0 0 28px rgba(109, 93, 252, 0.24), 0 0 80px rgba(79, 70, 229, 0.08);
+  --glow-green: 0 0 16px rgba(67, 209, 122, 0.28);
+  --glow-magenta: var(--glow-violet);
+  --glow-cyan: var(--glow-violet);
+  --glow-lime: var(--glow-green);
+  --border-neon: linear-gradient(135deg, #6d5dfc, #4338ca, #43d17a);
 }
 
 * {
+  box-sizing: border-box;
   scrollbar-width: thin;
-  scrollbar-color: #2a2040 transparent;
+  scrollbar-color: #282e3c transparent;
+}
+
+html {
+  background: var(--color-ink);
 }
 
 body {
+  margin: 0;
+  min-width: 320px;
   background-color: var(--color-ink);
   color: var(--color-text-primary);
   font-family: var(--font-body);
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(255, 45, 214, 0.14), transparent 55%),
-    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(0, 232, 240, 0.1), transparent 50%),
-    radial-gradient(ellipse 50% 30% at 0% 100%, rgba(184, 255, 60, 0.06), transparent 45%),
-    linear-gradient(rgba(42, 32, 64, 0.35) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(42, 32, 64, 0.35) 1px, transparent 1px);
-  background-size:
-    auto,
-    auto,
-    auto,
-    48px 48px,
-    48px 48px;
+    radial-gradient(circle at 44% 10%, rgba(79, 70, 229, 0.11), transparent 25rem),
+    radial-gradient(circle at 82% 32%, rgba(91, 33, 182, 0.07), transparent 27rem),
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: auto, auto, 48px 48px, 48px 48px;
   background-attachment: fixed;
 }
 
-/* —— Shared vibe utilities (use beside semantic tokens) —— */
-
-.vibe-panel {
-  border: 1px solid color-mix(in srgb, var(--color-teal) 28%, var(--color-line));
-  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
-  box-shadow: var(--glow-cyan);
-  border-radius: 1rem;
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
 }
 
-.vibe-panel-hot {
-  border: 1px solid color-mix(in srgb, var(--color-coral) 40%, var(--color-line));
-  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
-  box-shadow: var(--glow-magenta);
-  border-radius: 1rem;
+button,
+a {
+  transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
 }
 
+.operator-panel {
+  border: 1px solid var(--color-line);
+  background: linear-gradient(180deg, rgba(16, 19, 27, 0.86), rgba(7, 9, 13, 0.92));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  border-radius: 0.85rem;
+}
+
+.operator-panel-glow {
+  border: 1px solid color-mix(in srgb, var(--color-violet) 55%, var(--color-line));
+  background: linear-gradient(180deg, rgba(14, 15, 24, 0.94), rgba(6, 7, 11, 0.98));
+  box-shadow: var(--glow-violet), inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  border-radius: 0.95rem;
+}
+
+.operator-grid {
+  background-image:
+    linear-gradient(rgba(109, 93, 252, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(109, 93, 252, 0.035) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.operator-nebula {
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(79, 70, 229, 0.22), transparent 38%),
+    radial-gradient(ellipse at 18% 40%, rgba(67, 56, 202, 0.10), transparent 32%),
+    radial-gradient(ellipse at 88% 36%, rgba(91, 33, 182, 0.10), transparent 28%);
+}
+
+.vibe-panel,
+.vibe-panel-hot,
 .vibe-frame {
-  position: relative;
-  border-radius: 1.25rem;
-  background: var(--color-surface);
-  border: 1px solid transparent;
-  background-clip: padding-box;
-  box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--color-coral) 55%, transparent),
-    0 0 0 2px color-mix(in srgb, var(--color-teal) 35%, transparent),
-    var(--glow-magenta);
+  border: 1px solid var(--color-line);
+  background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+  border-radius: 1rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
 
 .btn-vibe-primary {
-  background: var(--color-amber);
-  color: #0a0a0a;
+  background: var(--color-violet);
+  color: white;
   font-weight: 600;
-  border-radius: 9999px;
-  box-shadow: var(--glow-lime);
-  transition: transform 0.15s ease, filter 0.15s ease;
+  border-radius: 0.7rem;
+  box-shadow: var(--glow-violet);
 }
 .btn-vibe-primary:hover:not(:disabled) {
-  filter: brightness(1.05);
+  filter: brightness(1.08);
   transform: translateY(-1px);
 }
-.btn-vibe-primary:disabled {
+.btn-vibe-primary:disabled,
+.btn-vibe-secondary:disabled {
   opacity: 0.35;
 }
 
 .btn-vibe-secondary {
   background: transparent;
-  color: var(--color-teal);
-  border: 1px solid var(--color-teal);
-  border-radius: 9999px;
-  box-shadow: var(--glow-cyan);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-line);
+  border-radius: 0.7rem;
   font-weight: 600;
-  transition: background 0.15s ease, color 0.15s ease;
 }
 .btn-vibe-secondary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-teal) 12%, transparent);
-}
-.btn-vibe-secondary:disabled {
-  opacity: 0.35;
+  border-color: color-mix(in srgb, var(--color-violet) 55%, var(--color-line));
+  color: white;
+  background: rgba(109, 93, 252, 0.06);
 }
 
 .text-vibe-brand {
   font-family: var(--font-display);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  background: linear-gradient(120deg, var(--color-coral), var(--color-violet), var(--color-teal));
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  background: linear-gradient(110deg, #ffffff 20%, #8b7cff 65%, #6d5dfc 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -137,25 +152,24 @@ pre,
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--color-teal) 35%, transparent);
-  color: var(--color-text-primary);
+  background: rgba(109, 93, 252, 0.35);
+  color: white;
 }
 
 input,
 textarea,
 select {
-  caret-color: var(--color-teal);
+  caret-color: var(--color-violet);
 }
 
 input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  border-color: color-mix(in srgb, var(--color-teal) 55%, var(--color-line)) !important;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-teal) 30%, transparent);
+  border-color: color-mix(in srgb, var(--color-violet) 68%, var(--color-line)) !important;
+  box-shadow: 0 0 0 1px rgba(109, 93, 252, 0.2), 0 0 28px rgba(109, 93, 252, 0.08);
 }
 
-/* React Flow — blend into vibe theme */
 .react-flow {
   background: transparent !important;
 }

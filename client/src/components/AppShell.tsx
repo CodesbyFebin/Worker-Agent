@@ -1,38 +1,36 @@
 import { useState, type ReactNode } from "react";
 import {
-  LayoutGrid,
-  Folder,
-  Zap,
-  Bot,
-  Wrench,
-  Play,
-  Smartphone,
-  Search,
-  Pencil,
-  ShieldCheck,
-  CheckCircle2,
-  Upload,
-  BookOpen,
-  FileText,
-  Workflow,
-  MonitorSmartphone,
-  CalendarClock,
-  Film,
-  ChevronLeft,
-  Plug,
-  Library,
-  Share2,
   Activity,
+  BookOpen,
+  Bot,
   Calendar,
-  Inbox,
-  Settings,
-  PenLine,
+  CheckCircle2,
+  ChevronDown,
+  ChevronLeft,
+  FileText,
+  Folder,
   GitBranch,
+  Inbox,
   KeyRound,
+  LayoutGrid,
+  Library,
+  MonitorSmartphone,
+  PenLine,
+  Play,
+  Plug,
   RefreshCw,
+  Search,
+  Settings,
+  Share2,
+  ShieldCheck,
+  Smartphone,
+  Upload,
+  Video,
+  Workflow,
+  Wrench,
+  Zap,
 } from "lucide-react";
 import { WorkerAgentLogo } from "./WorkerAgentLogo";
-import { AgentRail } from "./AgentRail";
 import { WorkspaceNavProvider } from "./WorkspaceNavContext";
 import { ContentPipelineBar } from "./ContentPipelineBar";
 
@@ -71,28 +69,31 @@ export type WorkspaceId =
 
 type NavItem = { id: WorkspaceId; label: string; icon: typeof FileText };
 
-const PLATFORM: NavItem[] = [
-  { id: "script-studio", label: "Script Studio", icon: FileText },
-  { id: "claim-ledger", label: "Claim Ledger", icon: ShieldCheck },
-  { id: "god-machine", label: "God Machine", icon: Workflow },
-  { id: "idea-ide", label: "IDEa IDE", icon: MonitorSmartphone },
-  { id: "youtube-automode", label: "YouTube Autopilot", icon: CalendarClock },
-  { id: "youtube-studio", label: "YT Studio", icon: Film },
+const CONTROL_PLANE: NavItem[] = [
+  { id: "overview", label: "Overview", icon: LayoutGrid },
+  { id: "god-machine", label: "Missions", icon: Workflow },
+  { id: "research", label: "Intelligence", icon: Search },
+  { id: "workspace", label: "Content", icon: Folder },
+  { id: "youtube", label: "Channels", icon: Play },
+  { id: "automations", label: "Automation", icon: Zap },
+  { id: "governance", label: "Governance", icon: ShieldCheck },
+  { id: "learn", label: "Learn Loop", icon: BookOpen },
+  { id: "settings", label: "Settings", icon: Settings },
 ];
 
-const CONTENT_OPS: NavItem[] = [
-  { id: "overview", label: "Overview", icon: LayoutGrid },
-  { id: "workspace", label: "Workspace", icon: Folder },
-  { id: "automations", label: "Automations", icon: Zap },
+const ADVANCED: NavItem[] = [
+  { id: "script-studio", label: "Script Studio", icon: FileText },
+  { id: "claim-ledger", label: "Claim Ledger", icon: ShieldCheck },
+  { id: "idea-ide", label: "IDEa IDE", icon: MonitorSmartphone },
+  { id: "youtube-automode", label: "YouTube Autopilot", icon: Video },
+  { id: "youtube-studio", label: "YT Studio", icon: Video },
   { id: "agents", label: "Agents", icon: Bot },
   { id: "tools-mcp", label: "Tools & MCP", icon: Wrench },
   { id: "research-to-post", label: "Research-to-Post", icon: GitBranch },
-  { id: "youtube", label: "Autopilot", icon: Play },
   { id: "shorts-reels", label: "Shorts & Reels", icon: Smartphone },
   { id: "social-manager", label: "Social Manager", icon: Share2 },
   { id: "blogging", label: "Blogging Studio", icon: PenLine },
-  { id: "research", label: "Research", icon: Search },
-  { id: "drafts", label: "Drafts", icon: Pencil },
+  { id: "drafts", label: "Drafts", icon: FileText },
   { id: "evidence", label: "Evidence", icon: ShieldCheck },
   { id: "approvals", label: "Approvals", icon: CheckCircle2 },
   { id: "publishing", label: "Publishing", icon: Upload },
@@ -103,9 +104,6 @@ const CONTENT_OPS: NavItem[] = [
   { id: "inbox", label: "Inbox", icon: Inbox },
   { id: "activity", label: "Activity", icon: Activity },
   { id: "recovery", label: "Recovery", icon: RefreshCw },
-  { id: "governance", label: "Governance", icon: ShieldCheck },
-  { id: "learn", label: "Learn", icon: BookOpen },
-  { id: "settings", label: "Settings", icon: Settings },
 ];
 
 const FULL_BLEED: WorkspaceId[] = [
@@ -138,35 +136,20 @@ const FULL_BLEED: WorkspaceId[] = [
   "settings",
 ];
 
-function NavButton({
-  item,
-  active,
-  collapsed,
-  onClick,
-}: {
-  item: NavItem;
-  active: boolean;
-  collapsed: boolean;
-  onClick: () => void;
-}) {
+function NavButton({ item, active, collapsed, onClick }: { item: NavItem; active: boolean; collapsed: boolean; onClick: () => void }) {
   const Icon = item.icon;
   return (
     <button
       type="button"
       onClick={onClick}
       title={item.label}
-      className={`relative flex w-full items-center gap-2 rounded-xl px-2 py-2 text-left text-[12px] transition-all ${
-        collapsed ? "justify-center" : "lg:px-3"
-      } ${
+      className={`relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left text-[12px] ${collapsed ? "justify-center" : ""} ${
         active
-          ? "bg-[var(--color-violet)]/15 text-[var(--color-text-primary)] shadow-[var(--glow-magenta)] ring-1 ring-[var(--color-violet)]/45"
-          : "text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text-primary)]"
+          ? "border border-[#7164ff]/25 bg-[#7164ff]/12 text-white shadow-[inset_3px_0_0_#7164ff]"
+          : "border border-transparent text-[var(--color-text-muted)] hover:bg-white/[0.035] hover:text-white"
       }`}
     >
-      {active && !collapsed && (
-        <span className="absolute left-0 top-1/2 hidden h-5 w-0.5 -translate-y-1/2 rounded-full bg-[var(--color-violet)] lg:block" />
-      )}
-      <Icon size={16} className={active ? "text-[var(--color-violet)]" : undefined} />
+      <Icon size={15} className={active ? "text-[#8175ff]" : undefined} />
       {!collapsed && <span className="hidden truncate font-medium lg:inline">{item.label}</span>}
     </button>
   );
@@ -175,9 +158,11 @@ function NavButton({
 export function AppShell({ children }: { children: (active: WorkspaceId) => ReactNode }) {
   const [active, setActive] = useState<WorkspaceId>("overview");
   const [collapsed, setCollapsed] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [focusScriptId, setFocusScriptId] = useState<string | null>(null);
   const [focusPipelineId, setFocusPipelineId] = useState<string | null>(null);
   const chromeLess = FULL_BLEED.includes(active);
+  const showPipeline = active !== "overview";
 
   const navValue = {
     active,
@@ -190,97 +175,60 @@ export function AppShell({ children }: { children: (active: WorkspaceId) => Reac
 
   return (
     <WorkspaceNavProvider value={navValue}>
-      <div className="flex h-screen overflow-hidden text-[var(--color-text-primary)]">
-        <nav
-          className={`relative flex shrink-0 flex-col border-r border-[var(--color-line)] bg-[var(--color-surface)]/95 py-3 backdrop-blur-md transition-all ${
-            collapsed ? "w-14 items-center px-1" : "w-14 items-center lg:w-56 lg:items-stretch lg:px-2"
-          }`}
-        >
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gradient-to-b from-[var(--color-violet)] via-[var(--color-teal)] to-[var(--color-amber)] opacity-40" />
-
-          <div className={`mb-3 ${collapsed ? "flex justify-center" : "px-1"}`}>
+      <div className="flex h-full min-h-0 overflow-hidden bg-[var(--color-ink)] text-[var(--color-text-primary)]">
+        <nav className={`relative flex shrink-0 flex-col border-r border-[var(--color-line)] bg-[#07090d]/96 py-3 transition-all ${collapsed ? "w-14 items-center px-1" : "w-14 items-center lg:w-52 lg:items-stretch lg:px-2"}`}>
+          <div className={`mb-5 ${collapsed ? "flex justify-center" : "px-1"}`}>
             {collapsed ? (
               <WorkerAgentLogo size={28} showWordmark={false} />
             ) : (
-              <div className="hidden lg:block">
-                <WorkerAgentLogo size={28} />
-              </div>
+              <>
+                <div className="hidden lg:block"><WorkerAgentLogo size={28} /></div>
+                <div className="flex justify-center lg:hidden"><WorkerAgentLogo size={28} showWordmark={false} /></div>
+              </>
             )}
+          </div>
+
+          {!collapsed && <p className="mb-2 hidden px-3 font-[var(--font-mono)] text-[8px] uppercase tracking-[0.2em] text-[var(--color-text-muted)] lg:block">Mission Control</p>}
+          <div className={`flex flex-col gap-1 ${collapsed ? "items-center" : ""}`}>
+            {CONTROL_PLANE.map((item) => (
+              <NavButton key={item.id} item={item} active={active === item.id} collapsed={collapsed} onClick={() => setActive(item.id)} />
+            ))}
+          </div>
+
+          <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
             {!collapsed && (
-              <div className="flex justify-center lg:hidden">
-                <WorkerAgentLogo size={28} showWordmark={false} />
+              <button type="button" onClick={() => setAdvancedOpen((value) => !value)} className="hidden w-full items-center justify-between rounded-lg px-3 py-2 text-[9px] uppercase tracking-[0.16em] text-[var(--color-text-muted)] hover:bg-white/[0.025] hover:text-white lg:flex">
+                Advanced workspaces
+                <ChevronDown size={13} className={advancedOpen ? "rotate-180" : ""} />
+              </button>
+            )}
+            {(collapsed || advancedOpen) && (
+              <div className={`mt-1 flex flex-col gap-1 ${collapsed ? "items-center" : ""}`}>
+                {ADVANCED.map((item) => (
+                  <NavButton key={item.id} item={item} active={active === item.id} collapsed={collapsed} onClick={() => setActive(item.id)} />
+                ))}
               </div>
             )}
           </div>
 
-          {!collapsed && (
-            <p className="mb-1 hidden px-3 font-[var(--font-mono)] text-[9px] uppercase tracking-widest text-[var(--color-text-muted)] lg:block">
-              Platform
-            </p>
-          )}
-          <div className={`flex flex-col gap-0.5 ${collapsed ? "items-center" : ""}`}>
-            {PLATFORM.map((item) => (
-              <NavButton
-                key={item.id}
-                item={item}
-                active={active === item.id}
-                collapsed={collapsed}
-                onClick={() => setActive(item.id)}
-              />
-            ))}
-          </div>
-
-          <div className="my-2 mx-2 hidden h-px bg-[var(--color-line)] lg:block" />
-
-          {!collapsed && (
-            <p className="mb-1 hidden px-3 font-[var(--font-mono)] text-[9px] uppercase tracking-widest text-[var(--color-text-muted)] lg:block">
-              Content Ops
-            </p>
-          )}
-          <div
-            className={`min-h-0 flex-1 overflow-y-auto ${collapsed ? "flex flex-col items-center gap-0.5" : "space-y-0.5"}`}
-          >
-            {CONTENT_OPS.map((item) => (
-              <NavButton
-                key={item.id}
-                item={item}
-                active={active === item.id}
-                collapsed={collapsed}
-                onClick={() => setActive(item.id)}
-              />
-            ))}
-          </div>
-
-          {!collapsed && (
-            <button
-              type="button"
-              onClick={() => setCollapsed(true)}
-              className="mt-2 hidden items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] lg:flex"
-            >
-              <ChevronLeft size={14} />
-              Collapse
+          <div className={`mt-3 border-t border-[var(--color-line)] pt-3 ${collapsed ? "flex flex-col items-center" : "px-2"}`}>
+            {!collapsed && (
+              <div className="mb-2 hidden items-center gap-2 rounded-lg border border-[var(--color-line)] bg-black/25 px-3 py-2 font-[var(--font-mono)] text-[8px] uppercase tracking-wider text-[var(--color-text-muted)] lg:flex">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--color-teal)] shadow-[var(--glow-green)]" />
+                System online
+              </div>
+            )}
+            <button type="button" onClick={() => setCollapsed((value) => !value)} className="flex items-center gap-2 rounded-lg p-2 text-[10px] text-[var(--color-text-muted)] hover:bg-white/[0.035] hover:text-white" title={collapsed ? "Expand navigation" : "Collapse navigation"}>
+              <ChevronLeft size={14} className={collapsed ? "rotate-180" : ""} />
+              {!collapsed && <span className="hidden lg:inline">Collapse</span>}
             </button>
-          )}
-          {collapsed && (
-            <button
-              type="button"
-              onClick={() => setCollapsed(false)}
-              className="mt-2 rounded-lg p-2 text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)]"
-              title="Expand"
-            >
-              <ChevronLeft size={14} className="rotate-180" />
-            </button>
-          )}
+          </div>
         </nav>
 
         <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          <ContentPipelineBar />
-          <div className={`min-h-0 flex-1 ${chromeLess ? "overflow-hidden p-0" : "overflow-y-auto p-6"}`}>
-            {children(active)}
-          </div>
+          {showPipeline && <ContentPipelineBar />}
+          <div className={`min-h-0 flex-1 ${chromeLess ? "overflow-hidden p-0" : "overflow-y-auto p-6"}`}>{children(active)}</div>
         </main>
-
-        {!chromeLess && <AgentRail />}
       </div>
     </WorkspaceNavProvider>
   );
