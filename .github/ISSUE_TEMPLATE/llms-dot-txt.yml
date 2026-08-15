@@ -1,0 +1,11 @@
+name: llms.txt
+about: Request additions to the AI-readable documentation file
+labels: documentation
+body:
+  - type: input
+    id: suggestion
+    attributes:
+      label: Suggestion
+      description: What should be added/updated in llms.txt?
+    validations:
+      required: true

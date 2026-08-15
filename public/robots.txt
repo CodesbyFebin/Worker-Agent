@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://CodesbyFebin.github.io/Worker-Agent/sitemap.xml
+
+Disallow: /dashboard/
+Disallow: /missions/
+Disallow: /trpc/
+Disallow: /events
+Disallow: /api/
+Disallow: /webhooks/
+Disallow: /admin/
+Disallow: /login/

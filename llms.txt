@@ -1,0 +1,125 @@
+# Worker Agent - AI-Readable Documentation
+
+This file provides a machine-readable summary of Worker Agent for AI assistants and automated systems.
+
+## Project Overview
+
+Worker Agent is an open-source AI agent workspace for autonomous research, workflow automation, and real-time execution.
+
+- **Language**: TypeScript (Node.js 20+ on server, React 19 on client)
+- **Database**: MariaDB / MySQL (62 tables)
+- **Cache/Queue**: Redis 7+ with BullMQ
+- **ORM**: Drizzle ORM
+- **API**: tRPC (type-safe) + REST v1 facade + SSE streaming
+- **Auth**: Argon2id password hashing + httpOnly session cookies
+- **License**: MIT
+- **Repository**: https://github.com/CodesbyFebin/Worker-Agent
+
+## Key Concepts
+
+### AI Agents
+Autonomous agents that can plan, execute, search, and stream results in real-time.
+
+### Deep Research
+Multi-phase research pipeline that ingests sources, processes information, and produces synthesized reports with confidence scoring.
+
+### Real-Time SSE
+Server-Sent Events stream at `/events` provides live updates on agent execution, research phases, and workflow steps. All events are organization-scoped.
+
+### Mission Control
+The command center dashboard for managing agents, tasks, research, campaigns, and governance.
+
+### Organizations
+Multi-tenant model where each organization has isolated data, agents, and event streams.
+
+## Core API Endpoints
+
+### tRPC Router: `auth`
+- `devLogin` (disabled in production)
+- `login` (email/password)
+- `logout`
+- `getSession`
+- `signUp`
+
+### tRPC Router: `godMachine`
+- `orchestrateGoal` (dispatch agent task)
+- `getTask`
+- `getTaskEvents`
+
+### tRPC Router: `workflow`
+- `createWorkflow`
+- `runWorkflow`
+- `getRun`
+- `getStepRuns`
+
+### tRPC Router: `agents`
+- `createAgent`
+- `listAgents`
+- `getAgent`
+- `dispatchAgent`
+
+### REST v1 Endpoints (`/api/v1/`)
+- `GET /health` - Liveness + counters
+- `GET /openapi.json` - OpenAPI 3.1 spec
+- `GET /workflows` - List org workflows
+- `POST /goals` - Dispatch agent goal
+- `GET /campaigns` - Campaign status
+- `GET /youtube/channels` - YouTube channel list
+- `GET /knowledge/search` - Search knowledge base
+- `POST /knowledge/embeddings` - Upsert embeddings
+
+### SSE Endpoint
+- `GET /events` - Organization-scoped event stream
+  - Requires httpOnly session cookie
+  - Event types: connected, research, status_changed, retry, error, info
+
+## Database Schema
+
+62 tables organized into:
+
+1. **Auth & Tenancy** (10 tables): users, organizations, sessions, roles, permissions
+2. **Agents** (10 tables): agent_definitions, agent_executions, agent_evaluations
+3. **Workflows** (8 tables): workflow_definitions, workflow_runs, workflow_steps
+4. **Governance** (6 tables): governance_policies, approval_requests, compliance_verdicts
+5. **Artifacts** (6 tables): artifacts, artifact_versions, evidence_snapshots
+6. **YouTube** (4 tables): youtube_channels, youtube_videos, youtube_trends
+7. **Knowledge** (4 tables): knowledge_embeddings, topic_taxonomies
+8. **Operations** (10+ tables): claim_ledger, quota_ledger, audit_logs, dead_letter_jobs, etc.
+
+## Provider Routing
+
+Supports multiple AI providers with policy-based routing:
+
+- OpenAI
+- Anthropic
+- Google Gemini
+- Groq
+- OpenRouter
+- NVIDIA NIM
+- Ollama (local)
+- Pollinations
+
+Fallback order configurable via LLM_FALLBACK environment variable.
+
+## Deployment
+
+### Local Development
+```bash
+npm install
+npm run dev:api      # Terminal 1
+npm run dev:worker   # Terminal 2
+npm run dev:client   # Terminal 3
+```
+
+### Docker
+```bash
+docker compose up -d
+```
+
+### Production
+- Nginx reverse proxy with TLS
+- systemd service units
+- Bootstrap script for automated setup
+
+## License
+MIT - built for the open-source community.

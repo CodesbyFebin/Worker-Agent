@@ -1,0 +1,58 @@
+name: Feature Request
+about: Propose a new feature or enhancement
+title: '[feature]: '
+labels: ['enhancement', 'triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea for Worker Agent? We'd love to hear it!
+
+  - type: input
+    id: feature
+    attributes:
+      label: Feature Name
+      description: One-line summary of the feature
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the use case or pain point
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How should it work? Include design ideas if possible.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Did you consider other approaches?
+    validations:
+      required: true
+
+  - type: input
+    id: priority
+    attributes:
+      label: Priority
+      description: How critical is this to your workflow?
+      placeholder: "Nice to have / Important / Critical"
+    validations:
+      required: false
+
+  - type: checkboxes
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing discussions and issues for this feature
+        - label: I'm willing to help implement this feature
+        required: true
