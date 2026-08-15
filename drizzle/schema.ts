@@ -24,6 +24,21 @@ export const users = mysqlTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const userCredentials = mysqlTable(
+  "user_credentials",
+  {
+    userId: varchar("user_id", { length: 36 })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    passwordHash: text("password_hash").notNull(),
+    passwordUpdatedAt: timestamp("password_updated_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    pk: index("user_credentials_user_id_idx").on(table.userId),
+  }),
+);
+
 /* -------------------------------------------------------------------------
  * Phase 2 — Authentication, organizations, RBAC, sessions, audit
  * ---------------------------------------------------------------------- */

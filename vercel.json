@@ -4,14 +4,17 @@
   "buildCommand": "npm --prefix client run build",
   "outputDirectory": "client/dist",
   "rewrites": [
-    {
-      "source": "/dashboard",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/dashboard/:path*",
-      "destination": "/index.html"
-    }
+    { "source": "/dashboard", "destination": "/index.html" },
+    { "source": "/dashboard/:path*", "destination": "/index.html" },
+    { "source": "/missions", "destination": "/index.html" },
+    { "source": "/missions/:path*", "destination": "/index.html" },
+    { "source": "/intelligence", "destination": "/index.html" },
+    { "source": "/content", "destination": "/index.html" },
+    { "source": "/channels", "destination": "/index.html" },
+    { "source": "/automation", "destination": "/index.html" },
+    { "source": "/governance", "destination": "/index.html" },
+    { "source": "/learn", "destination": "/index.html" },
+    { "source": "/settings", "destination": "/index.html" }
   ],
   "headers": [
     {

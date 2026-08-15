@@ -35,10 +35,10 @@ const loop = [
 ] as const;
 
 const demoStats = [
-  ["836+", "Retention patterns"],
-  ["14K+", "Signals analyzed daily"],
-  ["91%", "Avg. retention lift"],
-  ["$82", "Avg. RPM increase"],
+  ["Example", "Retention patterns"],
+  ["Example", "Signals analyzed daily"],
+  ["Example", "Avg. retention lift"],
+  ["Example", "Avg. RPM increase"],
 ] as const;
 
 export function LandingPage({ onLaunchApp }: LandingPageProps) {
@@ -101,20 +101,20 @@ export function LandingPage({ onLaunchApp }: LandingPageProps) {
               </div>
             </div>
 
-            <div className="operator-panel-glow mx-auto mt-16 max-w-5xl overflow-hidden">
-              <div className="flex items-center justify-between border-b border-[var(--color-line)] px-5 py-3">
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-amber-300/70" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
+              <div className="operator-panel-glow mx-auto mt-16 max-w-5xl overflow-hidden">
+                <div className="flex items-center justify-between border-b border-[var(--color-line)] px-5 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-red-400/70" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-300/70" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
+                  </div>
+                  <div className="font-[var(--font-mono)] text-[9px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
+                    Illustrative product preview // worker_agent_v2.0
+                  </div>
+                  <div className="hidden items-center gap-2 font-[var(--font-mono)] text-[9px] text-[var(--color-teal)] sm:flex">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--color-teal)]" /> Online
+                  </div>
                 </div>
-                <div className="font-[var(--font-mono)] text-[9px] uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
-                  System online // worker_agent_v2.0
-                </div>
-                <div className="hidden items-center gap-2 font-[var(--font-mono)] text-[9px] text-[var(--color-teal)] sm:flex">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--color-teal)]" /> Online
-                </div>
-              </div>
 
               <div className="grid lg:grid-cols-[1fr_270px]">
                 <div className="p-6 font-[var(--font-mono)] text-[11px] leading-6 sm:p-8">

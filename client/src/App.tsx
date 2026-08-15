@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink } from "@trpc/client";
 import superjson from "superjson";
@@ -30,6 +30,64 @@ import { RecoveryWorkspace } from "./features/ops/RecoveryWorkspace";
 import { ContentOpsWorkspace, BloggingStudioWorkspace } from "./features/content/ContentOpsWorkspace";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:4000/trpc";
+
+const PATH_TO_WORKSPACE: Record<string, WorkspaceId> = {
+  "/": "overview",
+  "/dashboard": "overview",
+  "/missions": "god-machine",
+  "/intelligence": "research",
+  "/content": "workspace",
+  "/channels": "youtube",
+  "/automation": "automations",
+  "/governance": "governance",
+  "/learn": "learn",
+  "/settings": "settings",
+};
+
+const WORKSPACE_TO_PATH: Record<WorkspaceId, string> = {
+  "overview": "/dashboard",
+  "god-machine": "/missions",
+  "research": "/intelligence",
+  "workspace": "/content",
+  "youtube": "/channels",
+  "automations": "/automation",
+  "governance": "/governance",
+  "learn": "/learn",
+  "settings": "/settings",
+  // advanced workspaces fall back to overview
+  "script-studio": "/dashboard",
+  "claim-ledger": "/dashboard",
+  "idea-ide": "/dashboard",
+  "youtube-automode": "/dashboard",
+  "youtube-studio": "/dashboard",
+  "shorts-reels": "/dashboard",
+  "social-manager": "/dashboard",
+  "blogging": "/dashboard",
+  "drafts": "/dashboard",
+  "evidence": "/dashboard",
+  "approvals": "/dashboard",
+  "publishing": "/dashboard",
+  "templates": "/dashboard",
+  "plugins": "/dashboard",
+  "credentials": "/dashboard",
+  "activity": "/dashboard",
+  "recovery": "/dashboard",
+  "inbox": "/dashboard",
+  "calendar": "/dashboard",
+  "agents": "/dashboard",
+  "tools-mcp": "/dashboard",
+  "research-to-post": "/dashboard",
+};
+
+function getWorkspaceFromPath(pathname: string): WorkspaceId {
+  if (PATH_TO_WORKSPACE[pathname]) return PATH_TO_WORKSPACE[pathname];
+  if (pathname.startsWith("/missions/")) return "god-machine";
+  return "overview";
+}
+
+function getPathFromWorkspace(workspace: WorkspaceId): string {
+  return WORKSPACE_TO_PATH[workspace] ?? "/dashboard";
+}
 
 function renderWorkspace(active: WorkspaceId) {
   switch (active) {
@@ -114,6 +172,24 @@ export default function App() {
     }),
   );
 
+  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceId>(() => getWorkspaceFromPath(window.location.pathname));
+
+  useEffect(() => {
+    const onPopState = () => {
+      setActiveWorkspace(getWorkspaceFromPath(window.location.pathname));
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  const navigate = useCallback((workspace: WorkspaceId) => {
+    const path = getPathFromWorkspace(workspace);
+    if (window.location.pathname !== path) {
+      window.history.pushState({}, "", path);
+    }
+    setActiveWorkspace(workspace);
+  }, []);
+
   const isPublicLanding = window.location.pathname === "/";
 
   return (
@@ -126,7 +202,9 @@ export default function App() {
             <div className="flex h-screen min-h-0 flex-col">
               <OrgSessionBar />
               <div className="min-h-0 flex-1">
-                <AppShell>{(active) => renderWorkspace(active)}</AppShell>
+                <AppShell active={activeWorkspace} onNavigate={navigate}>
+                  {(active) => renderWorkspace(active)}
+                </AppShell>
               </div>
             </div>
           </AuthGate>
