@@ -1,0 +1,40 @@
+categories:
+  - name: Announcements
+    slug: announcements
+    description: Official project announcements and updates.
+    purpose: announcements
+
+  - name: 💡 Ideas
+    slug: ideas
+    description: Share and discuss new feature ideas for Worker Agent.
+    purpose: ideas
+
+  - name: 🧠 AI Agents
+    slug: ai-agents
+    description: Discuss AI agent implementations, capabilities, and use cases.
+    purpose: ideas
+
+  - name: 🔧 Help & Support
+    slug: help
+    description: Get help with installation, configuration, and usage.
+    purpose: questions
+
+  - name: 🚀 Show & Tell
+    slug: show-and-tell
+    description: Share what you've built with Worker Agent.
+    purpose: ideas
+
+  - name: 🛠 Self Hosting
+    slug: self-hosting
+    description: Discuss deployment, infrastructure, and self-hosting configurations.
+    purpose: questions
+
+  - name: 🧪 Experiments
+    slug: experiments
+    description: Share experimental agents, workflows, and research.
+    purpose: ideas
+
+  - name: 📣 Community
+    slug: community
+    description: General community discussion, feedback, and feedback.
+    purpose: discussion
