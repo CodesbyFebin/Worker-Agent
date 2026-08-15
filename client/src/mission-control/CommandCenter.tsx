@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { ArrowUp, BrainCircuit, CheckCircle2, Globe2, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
 import { trpc } from "../lib/trpc";
+import { useResearchEvents, type ResearchStreamConnection, type ResearchStreamEvent } from "../hooks/useResearchEvents";
 
 type Message = { role: "user" | "assistant"; content: string };
 const starterPrompts = [
@@ -12,9 +13,11 @@ const starterPrompts = [
 export function CommandCenter() {
   const [input, setInput] = useState("");
   const [deepResearch, setDeepResearch] = useState(false);
+  const [activeResearchRunId, setActiveResearchRunId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([
     { role: "assistant", content: "Mission Control online. I can research opportunities, decompose missions, interpret performance, and route actions through governance. What should we work on?" },
   ]);
+  const researchStream = useResearchEvents();
 
   const routerStatus = trpc.chat.status.useQuery(undefined, { refetchInterval: 10000, staleTime: 5000, retry: false });
   const chat = trpc.chat.send.useMutation({
@@ -32,14 +35,25 @@ export function CommandCenter() {
   const canSend = useMemo(() => input.trim().length > 0 && !chat.isPending && !campaign.isPending, [input, chat.isPending, campaign.isPending]);
   const activeResearchProviders = routerStatus.data?.lanes.research?.providers.filter((provider) => provider.enabled && provider.cooldownSeconds === 0) ?? [];
   const coolingProviders = Object.values(routerStatus.data?.lanes ?? {}).flatMap((lane) => lane.providers.filter((provider) => provider.cooldownSeconds > 0));
+  const activeResearchEvents = useMemo(
+    () => activeResearchRunId ? researchStream.events.filter((event) => event.runId === activeResearchRunId) : [],
+    [activeResearchRunId, researchStream.events],
+  );
 
   function sendMessage(value = input) {
     const content = value.trim();
     if (!content || chat.isPending || campaign.isPending) return;
     const nextMessages = [...messages, { role: "user" as const, content }];
+    const researchRunId = deepResearch ? crypto.randomUUID() : undefined;
     setMessages(nextMessages);
     setInput("");
-    chat.mutate({ messages: nextMessages, lane: deepResearch ? "research" : "speed", research: deepResearch });
+    setActiveResearchRunId(researchRunId ?? null);
+    chat.mutate({
+      messages: nextMessages,
+      lane: deepResearch ? "research" : "speed",
+      research: deepResearch,
+      researchRunId,
+    });
   }
 
   function buildMissionFromLatest() {
@@ -72,14 +86,16 @@ export function CommandCenter() {
                 </div>
               </div>
             ))}
-            {(chat.isPending || campaign.isPending) && <div className="flex justify-start"><div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-5 py-4 font-[var(--font-mono)] text-[10px] text-[var(--color-text-muted)]"><span className="animate-pulse">{campaign.isPending ? "Creating governed campaign…" : deepResearch ? "Searching and synthesizing sources…" : "Analyzing intelligence streams…"}</span></div></div>}
+            {campaign.isPending && <div className="flex justify-start"><div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-5 py-4 font-[var(--font-mono)] text-[10px] text-[var(--color-text-muted)]"><span className="animate-pulse">Creating governed campaign…</span></div></div>}
+            {chat.isPending && deepResearch && <ResearchProgress events={activeResearchEvents} connection={researchStream.connection} />}
+            {chat.isPending && !deepResearch && <div className="flex justify-start"><div className="rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-5 py-4 font-[var(--font-mono)] text-[10px] text-[var(--color-text-muted)]"><span className="animate-pulse">Analyzing intelligence streams…</span></div></div>}
           </div></div>
 
           <div className="shrink-0 border-t border-[var(--color-line)] bg-[var(--color-ink)] p-4 md:p-5"><div className="mx-auto max-w-4xl">
             {messages.length === 1 && <div className="mb-3 flex gap-2 overflow-x-auto pb-1">{starterPrompts.map((prompt) => <button key={prompt} type="button" onClick={() => sendMessage(prompt)} className="shrink-0 rounded-lg border border-[var(--color-line)] bg-[var(--color-surface)] px-3 py-2 text-left text-[10px] text-[var(--color-text-muted)] transition hover:border-[var(--color-violet)]/50 hover:text-white">{prompt}</button>)}</div>}
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <button type="button" aria-pressed={deepResearch} onClick={() => setDeepResearch((value) => !value)} className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 font-[var(--font-mono)] text-[10px] uppercase tracking-wider transition ${deepResearch ? "border-[var(--color-violet)] bg-[var(--color-violet)]/15 text-white" : "border-[var(--color-line)] bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-white"}`}><Globe2 className="h-3.5 w-3.5" />Deep Research<span className={`h-1.5 w-1.5 rounded-full ${deepResearch ? "bg-[var(--color-teal)]" : "bg-[var(--color-line-strong)]"}`} /></button>
-              {deepResearch && <span className="font-[var(--font-mono)] text-[9px] text-[var(--color-text-muted)]">{activeResearchProviders.length ? `${activeResearchProviders.map((provider) => provider.name).join(" + ")} available` : "No web-search provider available"}</span>}
+              {deepResearch && <span className="font-[var(--font-mono)] text-[9px] text-[var(--color-text-muted)]">{activeResearchProviders.length ? `${activeResearchProviders.map((provider) => provider.name).join(" + ")} available` : "No web-search provider available"} · stream {researchStream.connection}</span>}
             </div>
             <form onSubmit={(event) => { event.preventDefault(); sendMessage(); }} className="relative"><textarea value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendMessage(); } }} rows={2} placeholder={deepResearch ? "Ask Worker Agent to research the live web…" : "Ask Worker Agent to research, analyze, or build a mission…"} className="w-full resize-none rounded-2xl border border-[var(--color-line)] bg-[var(--color-surface)] px-4 py-3 pr-14 text-sm text-white outline-none transition placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-violet)]/60" /><button type="submit" disabled={!canSend} aria-label="Send" className="absolute bottom-2.5 right-2.5 flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--color-violet)] text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"><ArrowUp className="h-4 w-4" /></button></form>
             <p className="mt-2 text-center font-[var(--font-mono)] text-[9px] text-[var(--color-text-muted)]">Governed actions require approval before execution.</p>
@@ -98,6 +114,32 @@ export function CommandCenter() {
           {coolingProviders.length > 0 && <div className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/5 p-4"><p className="font-[var(--font-mono)] text-[9px] uppercase tracking-widest text-amber-300">Provider cooldowns</p><div className="mt-3 space-y-2">{coolingProviders.map((provider) => <div key={provider.name} className="flex items-center justify-between text-[10px]"><span className="text-[var(--color-text-secondary)]">{provider.name}</span><span className="font-[var(--font-mono)] text-amber-300">{provider.cooldownSeconds}s</span></div>)}</div></div>}
           <div className="mt-6 rounded-xl border border-[var(--color-line)] bg-[var(--color-ink)] p-4"><p className="font-[var(--font-mono)] text-[9px] uppercase tracking-widest text-[var(--color-text-muted)]">Mission pipeline</p><div className="mt-4 space-y-2">{["Research", "Select", "Create", "Govern", "Approve", "Publish", "Measure", "Learn"].map((stage, index) => <div key={stage} className="flex items-center gap-3 text-[11px]"><span className={`h-1.5 w-1.5 rounded-full ${index < 2 ? "bg-[var(--color-teal)]" : "bg-[var(--color-line-strong)]"}`} /><span className={index < 2 ? "text-white" : "text-[var(--color-text-muted)]"}>{stage}</span></div>)}</div></div>
         </aside>
+      </div>
+    </div>
+  );
+}
+
+function ResearchProgress({ events, connection }: { events: ResearchStreamEvent[]; connection: ResearchStreamConnection }) {
+  return (
+    <div className="flex justify-start">
+      <div className="w-full max-w-[92%] rounded-2xl border border-[var(--color-violet)]/35 bg-[var(--color-surface)] px-5 py-4">
+        <div className="flex items-center justify-between gap-3 font-[var(--font-mono)] text-[9px] uppercase tracking-widest">
+          <span className="flex items-center gap-2 text-[var(--color-violet)]"><Globe2 className="h-3 w-3" /> Live research</span>
+          <span className="text-[var(--color-text-muted)]">SSE {connection}</span>
+        </div>
+        <div className="mt-3 space-y-2 font-[var(--font-mono)] text-[10px]">
+          {events.length === 0 ? (
+            <div className="flex items-center gap-2 text-[var(--color-text-muted)]"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--color-violet)]" />Waiting for the research executor…</div>
+          ) : events.map((event, index) => (
+            <div key={`${event.runId}-${event.phase}-${index}`} className="flex items-start gap-2">
+              <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${event.phase === "completed" ? "bg-[var(--color-teal)]" : event.phase === "failed" ? "bg-red-400" : "animate-pulse bg-[var(--color-violet)]"}`} />
+              <div>
+                <span className={event.phase === "failed" ? "text-red-300" : "text-[var(--color-text-secondary)]"}>{event.message}</span>
+                {event.provider && <div className="mt-1 text-[9px] text-[var(--color-text-muted)]">{event.provider}{event.model ? ` · ${event.model}` : ""}{event.attempts ? ` · ${event.attempts} attempt${event.attempts === 1 ? "" : "s"}` : ""}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
