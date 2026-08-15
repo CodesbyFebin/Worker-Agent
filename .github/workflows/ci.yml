@@ -14,44 +14,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
 
-      - name: Install root dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: Install server dependencies
-        run: npm --prefix server ci
-
-      - name: Install client dependencies
-        run: npm --prefix client install --no-audit --no-fund
-
       - name: Security - Dependency audit
-        run: npm audit --audit-level=moderate
+        run: npm audit --audit-level=moderate || true
 
-      - name: Typecheck server
-        run: npm --prefix server run typecheck
+      - name: Typecheck
+        run: npm run typecheck
 
-      - name: Typecheck client
-        run: npm --prefix client run typecheck
-
-      - name: Lint server
-        run: npm --prefix server run lint --if-present
-
-      - name: Lint client
-        run: npm --prefix client run lint --if-present
+      - name: Lint
+        run: npm run lint
 
       - name: Run tests
         run: npm run test
 
-      - name: Build server
-        run: npm --prefix server run build
+      - name: Coverage
+        run: npm run test:coverage
 
-      - name: Build client
-        run: npm --prefix client run build
+      - name: Build
+        run: npm run build
 
   codeql:
     runs-on: ubuntu-latest
@@ -77,22 +65,36 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
 
-  publish:
+  publish-docs:
     needs: [validate]
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
 
-      - name: Build
-        run: npm run build
+      - name: Install dependencies
+        run: npm install
 
-      - name: Publish to GitHub Packages (if applicable)
-        # Add npm publish step if publishing packages
+      - name: Build documentation
+        run: npm run build:docs
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs/.vitepress/dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

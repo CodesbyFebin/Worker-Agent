@@ -19,10 +19,15 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "coverage": "vitest run --coverage && open coverage/index.html",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:ui": "playwright test --ui",
     "build": "npm --prefix server run build && npm --prefix client run build",
-    "build:docs": "echo 'Building documentation...'",
+    "build:docs": "npx vitepress build docs",
     "validate": "npm run typecheck && npm run lint && npm run test && npm run build",
     "validate:ci": "npm run typecheck && npm run lint && npm run test:coverage && npm run build",
+    "validate:e2e": "npm run test:e2e",
     "release": "npm run validate:ci && npm version ${{ args.version }} && git push && git push --tags",
     "db:push": "npx drizzle-kit push",
     "db:generate": "npx drizzle-kit generate",
@@ -32,7 +37,8 @@
     "docker:build": "docker build -t worker-agent-cloud:latest .",
     "docker:push": "docker push workeragentcloud/worker-agent-cloud:latest",
     "docs:dev": "npx vitepress dev docs",
-    "docs:build": "npx vitepress build docs"
+    "docs:build": "npx vitepress build docs",
+    "e2e:install": "npx playwright install-deps chromium firefox webkit"
   },
   "keywords": [
     "ai-agents",
@@ -65,10 +71,9 @@
     "url": "https://github.com/Cyberteckmaster/Worker-Agent/issues"
   },
   "devDependencies": {
+    "@playwright/test": "^1.47.0",
     "drizzle-kit": "^0.23.5",
     "vitest": "^4.1.10",
-    "vitest-coverage-merge": "^2.0.5",
-    "vitest-coverage-webapp": "^0.5.0",
     "sitemap": "^7.1.0"
   },
   "engines": {
