@@ -13,6 +13,7 @@ export default defineConfig({
     // @tanstack/react-query nested under client/ — alias so Vite can resolve it.
     alias: {
       "@tanstack/react-query": path.resolve(root, "../node_modules/@tanstack/react-query"),
+      "@trpc/server": path.resolve(root, "../node_modules/@trpc/server"),
     },
     dedupe: ["react", "react-dom", "@tanstack/react-query"],
   },

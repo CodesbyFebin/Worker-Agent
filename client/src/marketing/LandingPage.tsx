@@ -2,7 +2,7 @@ import {
   ArrowRight,
   BarChart3,
   BrainCircuit,
-  ChartNoAxesCombined,
+  PieChart,
   CircleDollarSign,
   Play,
   RotateCw,
@@ -20,7 +20,7 @@ type LandingPageProps = {
 const systems = [
   { title: "Intelligence", icon: BrainCircuit, features: ["Trend forecasting", "Competitor analysis", "Market scoring"] },
   { title: "Creation", icon: Video, features: ["Agent workflows", "Content generation", "Asset intelligence"] },
-  { title: "Growth", icon: ChartNoAxesCombined, features: ["A/B experiments", "Optimization", "Channel analytics"] },
+  { title: "Growth", icon: PieChart, features: ["A/B experiments", "Optimization", "Channel analytics"] },
   { title: "Economics", icon: CircleDollarSign, features: ["ROI intelligence", "Budget allocation", "Revenue signals"] },
   { title: "Governance", icon: ShieldCheck, features: ["Compliance", "Brand safety", "Audit + approvals"] },
   { title: "Autonomy", icon: Zap, features: ["Provider routing", "Pipeline orchestration", "Learning loops"] },
