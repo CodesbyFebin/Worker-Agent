@@ -1,77 +1,48 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Worker Agent — Autonomous OS for AI Content Networks</title>
-    <meta
-      name="description"
-      content="Worker Agent is the Mission Control interface for AI content networks: research trends, create content, enforce governance, run channels, and learn from every result."
-    />
-    <meta name="theme-color" content="#050506" />
-    <meta name="color-scheme" content="dark" />
-    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
-    <link rel="canonical" href="https://workeragent.cloud/" />
-    <link rel="icon" type="image/svg+xml" href="/worker-agent-mark.svg" />
-    <link rel="manifest" href="/site.webmanifest" />
-
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Worker Agent" />
-    <meta property="og:title" content="Worker Agent — Autonomous OS for AI Content Networks" />
-    <meta
-      property="og:description"
-      content="Research trends. Create content. Enforce compliance. Run channels. Learn from every result."
-    />
-    <meta property="og:url" content="https://workeragent.cloud/" />
-    <meta property="og:image" content="https://workeragent.cloud/og-image.png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Worker Agent — Autonomous OS for AI Content Networks" />
-    <meta
-      name="twitter:description"
-      content="Mission Control for AI content networks: research, creation, governance, channels, and learning loops."
-    />
-    <meta name="twitter:image" content="https://workeragent.cloud/og-image.png" />
-
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "Worker Agent Cloud",
-        "url": "https://workeragent.cloud/",
-        "logo": {
-          "@type": "ImageObject",
-          "url": "https://workeragent.cloud/worker-agent-mark.svg"
-        },
-        "sameAs": [
-          "https://github.com/CodesbyFebin/Worker-Agent",
-          "https://twitter.com/workeragent"
-        ],
-        "description": "Worker Agent.Cloud — Mission Control for autonomous AI content networks."
-      }
-    </script>
-
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "Worker Agent",
-        "url": "https://workeragent.cloud/",
-        "description": "Mission Control for AI-powered content networks.",
-        "applicationCategory": "BusinessApplication",
-        "operatingSystem": "Web",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        }
-      }
-    </script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Worker Agent — Autonomous OS for AI Content Networks</title>
+  <meta name="description" content="Worker Agent is Mission Control for governed AI content operations: research, evidence, creation, review, publishing workflows, and learning loops." />
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+  <meta name="theme-color" content="#0A0A0C" />
+  <meta name="color-scheme" content="dark" />
+  <link rel="canonical" href="https://workeragent.cloud/" />
+  <link rel="icon" type="image/svg+xml" href="/worker-agent-mark.svg" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Worker Agent" />
+  <meta property="og:title" content="Worker Agent — Autonomous OS for AI Content Networks" />
+  <meta property="og:description" content="Research. Create. Govern. Learn — from one Mission Control workspace." />
+  <meta property="og:url" content="https://workeragent.cloud/" />
+  <meta property="og:image" content="https://workeragent.cloud/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Worker Agent — Autonomous OS for AI Content Networks" />
+  <meta name="twitter:description" content="Mission Control for governed AI content operations." />
+  <meta name="twitter:image" content="https://workeragent.cloud/og-image.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root{--void:#0A0A0C;--panel:#131316;--raised:#19191D;--line:#26262B;--text:#EDEDEF;--muted:#9A9AA2;--faint:#65656D;--amber:#F2A94E;--teal:#5BC8AF;--violet:#9B8CFF}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--void);color:var(--text);font-family:Inter,system-ui,sans-serif;line-height:1.6}a{color:inherit}.wrap{width:min(1120px,calc(100% - 40px));margin:auto}.mono{font-family:"JetBrains Mono",monospace}
+    header{position:sticky;top:0;z-index:10;border-bottom:1px solid var(--line);background:rgba(10,10,12,.9);backdrop-filter:blur(18px)}.nav{height:64px;display:flex;align-items:center;justify-content:space-between;gap:24px}.brand{font-family:"Space Grotesk";font-weight:700;text-decoration:none;display:flex;align-items:center;gap:9px}.mark{display:grid;place-items:center;width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--amber),#c97d2e);color:#09090b}.links{display:flex;gap:24px;color:var(--muted);font-size:13px}.links a{text-decoration:none}.cta{padding:9px 15px;border-radius:7px;background:var(--text);color:#08080a;font-weight:700;text-decoration:none;font-size:13px}
+    section{padding:72px 0;border-bottom:1px solid var(--line)}.hero{padding-top:92px}.eyebrow{font:500 11px/1.4 "JetBrains Mono";letter-spacing:.12em;text-transform:uppercase;color:var(--amber)}h1,h2,h3{font-family:"Space Grotesk";margin:0}h1{max-width:880px;font-size:clamp(42px,7vw,76px);line-height:.98;letter-spacing:-.05em}.lede{max-width:670px;margin:24px 0 0;color:var(--muted);font-size:18px}.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}.primary,.secondary{display:inline-flex;align-items:center;justify-content:center;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700;font-size:14px}.primary{background:var(--amber);color:#08080a}.secondary{border:1px solid var(--line);background:var(--panel)}
+    .preview{margin-top:48px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:linear-gradient(145deg,#0d0d10,var(--panel));box-shadow:0 36px 100px -44px rgba(242,169,78,.35)}.preview-head{display:flex;justify-content:space-between;gap:16px;padding:13px 18px;border-bottom:1px solid var(--line);color:var(--faint);font:500 10px/1.4 "JetBrains Mono";letter-spacing:.08em;text-transform:uppercase}.preview-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px}.terminal{padding:30px;font:500 12px/2 "JetBrains Mono";color:var(--muted)}.terminal .ok{color:var(--teal)}.terminal .route{color:var(--violet);margin-top:12px}.status{padding:28px;border-left:1px solid var(--line);background:#0b0b0e}.status dl{display:grid;gap:17px;margin:18px 0 0}.status dt{color:var(--faint);font-size:11px}.status dd{margin:2px 0 0;font-size:12px}.tag{color:var(--teal)}
+    .loop{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:30px}.node{padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--muted);font:500 12px "JetBrains Mono"}.arrow{color:var(--faint)}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:32px}.card{padding:22px;border:1px solid var(--line);border-radius:11px;background:var(--panel)}.card h3{font-size:17px}.card p{color:var(--muted);font-size:13px;margin:8px 0 0}.faq{display:grid;gap:0;margin-top:26px}.faq article{padding:20px 0;border-top:1px solid var(--line)}.faq h3{font-size:16px}.faq p{max-width:760px;color:var(--muted);font-size:14px;margin:8px 0 0}.docs{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}.docs a{padding:9px 13px;border:1px solid var(--line);border-radius:7px;background:var(--panel);text-decoration:none;font-size:13px}footer{padding:38px 0;color:var(--faint);font-size:12px}.foot{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap}
+    @media(max-width:780px){.links{display:none}.preview-grid{grid-template-columns:1fr}.status{border-left:0;border-top:1px solid var(--line)}.grid{grid-template-columns:1fr}section{padding:56px 0}.hero{padding-top:68px}}
+  </style>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Worker Agent","applicationCategory":"BusinessApplication","operatingSystem":"Web","description":"Mission Control for governed AI content operations.","url":"https://workeragent.cloud/","codeRepository":"https://github.com/CodesbyFebin/Worker-Agent"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is Worker Agent?","acceptedAnswer":{"@type":"Answer","text":"Worker Agent is a Mission Control platform for AI-driven content operations with organization-scoped research, creation, governance, and workflow surfaces."}},{"@type":"Question","name":"How does the workflow operate?","acceptedAnswer":{"@type":"Answer","text":"Worker Agent coordinates research, evidence, content, review, and publishing workflow stages while keeping consequential actions behind governance and approval controls."}},{"@type":"Question","name":"Is Worker Agent self-hostable?","acceptedAnswer":{"@type":"Answer","text":"Yes. The repository documents a self-hosted stack built around Node, MariaDB, Redis, and BullMQ workers."}}]}</script>
+</head>
+<body>
+<header><div class="wrap nav"><a class="brand" href="/" aria-label="Worker Agent home"><span class="mark">W</span>Worker Agent</a><nav class="links" aria-label="Primary"><a href="#system">System</a><a href="#faq">FAQ</a><a href="https://github.com/CodesbyFebin/Worker-Agent/tree/main/docs">Docs</a><a href="https://github.com/CodesbyFebin/Worker-Agent">GitHub</a></nav><a class="cta" href="/dashboard">Launch Mission Control</a></div></header>
+<main>
+<section class="hero"><div class="wrap"><div class="eyebrow">WorkerAgent.Cloud · product overview</div><h1>The autonomous operating system for AI content networks.</h1><p class="lede">Research opportunities. Create content. Enforce governance. Run workflows. Learn from results — from one organization-scoped Mission Control.</p><div class="actions"><a class="primary" href="/dashboard">Launch Mission Control</a><a class="secondary" href="https://github.com/CodesbyFebin/Worker-Agent/blob/main/docs/architecture.md">See the architecture</a></div><div class="preview" aria-label="Illustrative product preview — not live telemetry"><div class="preview-head"><span>Mission Control · illustrative workflow</span><span>Not live telemetry</span></div><div class="preview-grid"><div class="terminal"><div class="ok">&gt; Receive operator goal</div><div class="ok">&gt; Plan governed research mission</div><div class="ok">&gt; Gather and evaluate evidence</div><div class="ok">&gt; Generate content assets</div><div>Approval checkpoint inserted before publish.</div><div class="route">Research → Evidence → Create → Review → Publish</div></div><aside class="status"><div class="eyebrow">Product preview</div><dl><div><dt>Research</dt><dd>Available in Mission Control</dd></div><div><dt>Governance</dt><dd>Approval-gated</dd></div><div><dt>Telemetry</dt><dd>Shown only after sign-in</dd></div><div><dt>Status</dt><dd class="tag">No fabricated metrics</dd></div></dl></aside></div></div></div></section>
+<section><div class="wrap"><div class="eyebrow">The learning loop</div><h2>Every completed cycle can improve the next decision.</h2><p class="lede">Worker Agent connects research, creation, review, publishing workflows, and post-run evidence without presenting illustrative values as production telemetry.</p><div class="loop"><span class="node">Signal</span><span class="arrow">→</span><span class="node">Research</span><span class="arrow">→</span><span class="node">Evidence</span><span class="arrow">→</span><span class="node">Create</span><span class="arrow">→</span><span class="node">Govern</span><span class="arrow">→</span><span class="node">Learn</span></div></div></section>
+<section id="system"><div class="wrap"><div class="eyebrow">System</div><h2>Six coordinated layers. One workspace.</h2><div class="grid"><article class="card"><h3>Intelligence</h3><p>Research orchestration and evidence-aware opportunity discovery.</p></article><article class="card"><h3>Creation</h3><p>Script, content, asset, and publishing workflow surfaces.</p></article><article class="card"><h3>Growth</h3><p>Experiment and performance workflows when real feeds are connected.</p></article><article class="card"><h3>Governance</h3><p>Approval gates, auditability, and organization-scoped controls.</p></article><article class="card"><h3>Autonomy</h3><p>Provider routing, agent execution, and pipeline orchestration.</p></article><article class="card"><h3>Organizations</h3><p>Session, membership, role, and permission boundaries for teams.</p></article></div></div></section>
+<section id="faq"><div class="wrap"><div class="eyebrow">FAQ</div><h2>Common questions</h2><div class="faq"><article><h3>What is Worker Agent?</h3><p>Worker Agent is a Mission Control platform for AI-driven content operations with organization-scoped research, creation, governance, and workflow surfaces.</p></article><article><h3>How does the workflow operate?</h3><p>Worker Agent coordinates research, evidence, content, review, and publishing workflow stages while keeping consequential actions behind governance and approval controls.</p></article><article><h3>Is Worker Agent self-hostable?</h3><p>Yes. The repository documents a self-hosted stack built around Node, MariaDB, Redis, and BullMQ workers.</p></article></div></div></section>
+<section><div class="wrap"><div class="eyebrow">Documentation</div><h2>Inspect the implementation and operating model.</h2><div class="docs"><a href="https://github.com/CodesbyFebin/Worker-Agent/blob/main/docs/getting-started.md">Getting started</a><a href="https://github.com/CodesbyFebin/Worker-Agent/blob/main/docs/architecture.md">Architecture</a><a href="https://github.com/CodesbyFebin/Worker-Agent/tree/main/docs/api">API docs</a><a href="https://github.com/CodesbyFebin/Worker-Agent/tree/main/docs/mcp">MCP docs</a><a href="https://github.com/CodesbyFebin/Worker-Agent">Source on GitHub</a></div></div></section>
+</main>
+<footer><div class="wrap foot"><span class="mono">workeragent.cloud</span><span>Product claims should follow runtime evidence.</span></div></footer>
+</body>
 </html>
