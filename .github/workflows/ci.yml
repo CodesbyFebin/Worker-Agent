@@ -26,6 +26,9 @@ jobs:
       - name: Validate SEO topical authority map
         run: npm run seo:validate
 
+      - name: Validate content publication gates
+        run: npm run content:validate
+
       - name: Security - Dependency audit
         run: npm audit --audit-level=moderate || true
 
@@ -41,14 +44,22 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Generate static authority content
+        run: npm run content:generate
+
       - name: Verify public build output
         run: |
           test -f client/dist/index.html
           test -f client/dist/dashboard/index.html
           test -f client/dist/robots.txt
           test -f client/dist/sitemap.xml
+          test -f client/dist/learn/index.html
+          test -f client/dist/learn/ai-worker-agent/index.html
+          test -f client/dist/learn/ai-worker-agent/security/index.html
           grep -q "The autonomous operating system" client/dist/index.html
           grep -q "noindex,nofollow" client/dist/dashboard/index.html
+          grep -q "Evidence-reviewed guides" client/dist/learn/index.html
+          grep -q "AI Worker Agent Security" client/dist/learn/ai-worker-agent/security/index.html
 
   accessibility:
     needs: [validate]
@@ -68,14 +79,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
+      - name: Build public web surfaces
+        run: npm run build:web
 
       - name: Serve static files
         run: |
           python3 -m http.server 5173 --directory client/dist >/tmp/worker-agent-static.log 2>&1 &
           sleep 2
           curl --fail --silent http://127.0.0.1:5173/ >/dev/null
+          curl --fail --silent http://127.0.0.1:5173/learn/ >/dev/null
 
       - name: Run axe accessibility check
         uses: dequelabs/axe-action@v4
