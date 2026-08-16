@@ -7,7 +7,7 @@
     "dev": "tsx watch --env-file=../.env _core/index.ts",
     "dev:api": "tsx watch --env-file=../.env _core/index.ts",
     "dev:worker": "tsx watch --env-file=../.env _core/worker.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node ../scripts/fix-esm-imports.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "start": "node --env-file=../.env dist/server/_core/index.js",
     "start:api": "node --env-file=../.env dist/server/_core/index.js",
