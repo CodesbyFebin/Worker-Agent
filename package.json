@@ -69,7 +69,8 @@
   "devDependencies": {
     "drizzle-kit": "^0.31.10",
     "sitemap": "^7.1.0",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "zod": "^3.23.8"
   },
   "engines": {
     "node": ">=20.0.0"

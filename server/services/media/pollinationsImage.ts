@@ -21,6 +21,6 @@ export async function generateImage(params: {
   }
 
   const buffer = Buffer.from(await response.arrayBuffer());
-  await fs.writeFile(outputPath, buffer);
+  await fs.writeFile(outputPath, buffer as any);
   return outputPath;
 }

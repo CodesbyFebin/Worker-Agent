@@ -96,7 +96,7 @@ export async function putObject(params: {
   contentType: string;
 }): Promise<PutObjectResult> {
   const body = typeof params.body === "string" ? Buffer.from(params.body, "utf8") : params.body;
-  const checksumSha256 = createHash("sha256").update(body).digest("hex");
+  const checksumSha256 = createHash("sha256").update(body as any).digest("hex");
   const key = `${params.organizationId}/${params.keySuffix}`.replace(/\\/g, "/");
 
   if (s3Configured()) {
@@ -105,7 +105,7 @@ export async function putObject(params: {
       new PutObjectCommand({
         Bucket: env.S3_BUCKET,
         Key: key,
-        Body: body,
+        Body: body as any,
         ContentType: params.contentType,
         Metadata: { sha256: checksumSha256 },
       }),
@@ -115,7 +115,7 @@ export async function putObject(params: {
 
   const abs = path.join(localRoot(), key);
   await fs.mkdir(path.dirname(abs), { recursive: true });
-  await fs.writeFile(abs, body);
+  await fs.writeFile(abs, body as any);
   return { backend: "local", key, sizeBytes: body.length, checksumSha256 };
 }
 

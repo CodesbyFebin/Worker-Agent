@@ -33,7 +33,7 @@ export async function generateVoiceover(params: {
   // Naive concatenation works for MP3 in practice for sequential playback,
   // though a production build should remux with ffmpeg for clean framing
   // rather than relying on raw byte concatenation.
-  await fs.writeFile(outputPath, Buffer.concat(audioBuffers));
+  await fs.writeFile(outputPath, Buffer.concat(audioBuffers as unknown as Uint8Array<ArrayBuffer>[]) as any);
   return outputPath;
 }
 

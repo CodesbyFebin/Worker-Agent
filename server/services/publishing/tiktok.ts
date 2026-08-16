@@ -55,7 +55,7 @@ export const publishToTiktok: PublishAdapter = async (content) => {
       "Content-Type": "video/mp4",
       "Content-Range": `bytes 0-${videoBuffer.byteLength - 1}/${videoBuffer.byteLength}`,
     },
-    body: videoBuffer,
+    body: videoBuffer as any,
   });
 
   if (!uploadResponse.ok) {

@@ -69,7 +69,7 @@ export function WorkflowsRuntimeWorkspace() {
 
   const validate = trpc.workflow.validateGraph.useQuery(
     { graph },
-    { enabled: graph.nodes.length > 0, keepPreviousData: true },
+    { enabled: graph.nodes.length > 0, placeholderData: (prev: any) => prev },
   );
 
   const create = trpc.workflow.create.useMutation({

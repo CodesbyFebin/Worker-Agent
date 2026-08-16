@@ -102,10 +102,10 @@ export default function App() {
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
     trpc.createClient({
-      transformer: superjson,
       links: [
         httpBatchLink({
           url: API_URL,
+          transformer: superjson,
           fetch(url, options) {
             return fetch(url, { ...options, credentials: "include" });
           },

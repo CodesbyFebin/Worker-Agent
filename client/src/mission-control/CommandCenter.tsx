@@ -64,7 +64,7 @@ export function CommandCenter() {
         ...current,
         {
           role: "assistant",
-          content: `Mission created successfully. Campaign ${result.id ?? "is now queued"}. The Worker Agent execution pipeline is active and governed; publication remains subject to the existing human approval gate.`,
+          content: `Mission created successfully. Campaign ${result.campaignId ?? "is now queued"}. The Worker Agent execution pipeline is active and governed; publication remains subject to the existing human approval gate.`,
         },
       ]);
     },
