@@ -23,7 +23,7 @@
     "test:coverage": "vitest run --coverage",
     "coverage": "vitest run --coverage && open coverage/index.html",
     "build": "npm --prefix server run build && npm --prefix client run build",
-    "build:web": "npm --prefix client exec -- vite build && npm run content:generate",
+    "build:web": "cd client && npm exec vite build && cd .. && npm run content:generate",
     "validate": "npm run typecheck && npm run lint && npm run test && npm run build",
     "validate:ci": "npm run typecheck && npm run lint && npm run test:coverage && npm run build",
     "seo:validate": "node scripts/seo/validate-topical-map.mjs",
