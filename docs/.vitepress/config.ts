@@ -3,7 +3,8 @@ import { defineConfig } from 'vitepress';
 export default defineConfig({
   title: 'Worker Agent.Cloud Documentation',
   description: 'Mission Control for AI-powered content networks',
-  base: '/',
+  base: '/docs/',
+  outDir: '../client/dist/docs',
   head: [
     ['meta', { name: 'theme-color', content: '#1a1a2e' }],
     ['meta', { property: 'og:title', content: 'Worker Agent.Cloud Documentation' }],

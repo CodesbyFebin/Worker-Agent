@@ -114,13 +114,22 @@ export default function App() {
     }),
   );
 
-  const isPublicLanding = window.location.pathname === "/";
+  const isPublicLanding = window.location.pathname === "/" || window.location.pathname.startsWith("/docs");
 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
         {isPublicLanding ? (
-          <LandingPage onLaunchApp={() => window.location.assign("/dashboard")} />
+          window.location.pathname.startsWith("/docs") ? (
+            <div className="min-h-screen bg-[#06080c] p-8 text-[var(--color-text-primary)]">
+              <p className="text-sm text-[var(--color-text-muted)]">
+                Documentation is served as static VitePress pages. If you see this message in
+                development, run <code>npm run docs:dev</code> in a separate terminal.
+              </p>
+            </div>
+          ) : (
+            <LandingPage onLaunchApp={() => window.location.assign("/dashboard")} />
+          )
         ) : (
           <AuthGate>
             <div className="flex h-screen min-h-0 flex-col">

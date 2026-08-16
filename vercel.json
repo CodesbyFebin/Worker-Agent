@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm ci && npm --prefix client install --legacy-peer-deps --no-audit --no-fund",
-  "buildCommand": "cd client && npm exec vite build",
+  "buildCommand": "npm run typecheck && npm run build",
   "outputDirectory": "client/dist",
   "images": {
     "sizes": [384, 512, 768, 1024, 1536],
@@ -34,6 +34,10 @@
       "destination": "/api/robots.txt"
     },
     {
+      "source": "/",
+      "destination": "/prerendered.html"
+    },
+    {
       "source": "/dashboard",
       "destination": "/index.html"
     },
@@ -61,6 +65,12 @@
       "source": "/assets/:path*",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/docs/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }
       ]
     }
   ],

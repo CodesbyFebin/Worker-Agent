@@ -2,7 +2,13 @@ User-agent: *
 Allow: /
 Disallow: /dashboard
 Disallow: /dashboard/
+Disallow: /missions/
+Disallow: /settings
+Disallow: /login
+Disallow: /signup
 Disallow: /trpc
 Disallow: /events
+Disallow: /health
+Disallow: /ready
 
 Sitemap: https://workeragent.cloud/sitemap.xml

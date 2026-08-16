@@ -12,6 +12,7 @@ import {
   Wifi,
   Zap,
 } from "lucide-react";
+import { LivePipelineStrip } from "../components/LivePipelineStrip";
 import { trpc } from "../lib/trpc";
 import { useResearchEvents, type ResearchStreamConnection, type ResearchStreamEvent } from "../hooks/useResearchEvents";
 
@@ -272,17 +273,8 @@ export function CommandCenter() {
             </div>
           )}
 
-          <div className="operator-panel mt-3 p-4">
-            <p className="font-[var(--font-mono)] text-[8px] uppercase tracking-[0.14em] text-[var(--color-text-muted)]">Mission pipeline</p>
-            <div className="mt-4 space-y-2.5">
-              {["Research", "Select", "Create", "Govern", "Approve", "Publish", "Measure", "Learn"].map((stage, index) => (
-                <div key={stage} className="flex items-center gap-3 text-[10px]">
-                  <span className={`h-1.5 w-1.5 rounded-full ${index < 2 ? "bg-[#8175ff]" : "bg-[var(--color-line-strong)]"}`} />
-                  <span className={index < 2 ? "text-white" : "text-[var(--color-text-muted)]"}>{stage}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+
+          <LivePipelineStrip />
 
           <button type="button" onClick={() => setInput("Summarize all currently available live signals and identify missing telemetry feeds.")} className="mt-3 flex w-full items-center justify-between rounded-xl border border-[var(--color-line)] px-4 py-3 text-[10px] text-[var(--color-text-secondary)] hover:border-[#7164ff]/40 hover:text-white">
             View all signals

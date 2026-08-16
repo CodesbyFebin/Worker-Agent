@@ -34,6 +34,8 @@
     "docker:push": "docker push workeragentcloud/worker-agent-cloud:latest",
     "docs:dev": "npx vitepress dev docs",
     "docs:build": "npx vitepress build docs",
+    "prerender": "cd client && node scripts/prerender-landing.mjs",
+    "build": "npm --prefix client run build && npm run prerender && npm run docs:build && npm --prefix server run build",
     "e2e:install": "npx playwright install-deps chromium firefox webkit"
   },
   "keywords": [

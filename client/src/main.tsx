@@ -1,10 +1,21 @@
 import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, hydrateRoot } from "react-dom/client";
 import App from "./App";
 import "./styles/index.css";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+const rootEl = document.getElementById("root")!;
+
+if (typeof window !== "undefined" && (window as unknown as { __SSR?: boolean }).__SSR) {
+  hydrateRoot(
+    rootEl,
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+} else {
+  createRoot(rootEl).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+}
