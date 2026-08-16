@@ -25,6 +25,7 @@
     "build": "npm --prefix server run build && npm --prefix client run build",
     "validate": "npm run typecheck && npm run lint && npm run test && npm run build",
     "validate:ci": "npm run typecheck && npm run lint && npm run test:coverage && npm run build",
+    "seo:validate": "node scripts/seo/validate-topical-map.mjs",
     "db:push": "npx drizzle-kit push",
     "db:generate": "npx drizzle-kit generate",
     "start:api": "npm --prefix server start:api",
