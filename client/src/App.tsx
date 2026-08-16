@@ -6,7 +6,6 @@ import { trpc } from "./lib/trpc";
 import { AppShell, type WorkspaceId } from "./components/AppShell";
 import { AuthGate } from "./components/AuthGate";
 import { OrgSessionBar } from "./components/OrgSessionBar";
-import { LandingPage } from "./marketing/LandingPage";
 import { CommandCenter } from "./mission-control/CommandCenter";
 import { ScriptStudioWorkspace } from "./features/script-studio/ScriptStudioWorkspace";
 import { EvidenceArtifactsWorkspace } from "./features/evidence/EvidenceArtifactsWorkspace";
@@ -114,23 +113,17 @@ export default function App() {
     }),
   );
 
-  const isPublicLanding = window.location.pathname === "/";
-
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        {isPublicLanding ? (
-          <LandingPage onLaunchApp={() => window.location.assign("/dashboard")} />
-        ) : (
-          <AuthGate>
-            <div className="flex h-screen min-h-0 flex-col">
-              <OrgSessionBar />
-              <div className="min-h-0 flex-1">
-                <AppShell>{(active) => renderWorkspace(active)}</AppShell>
-              </div>
+        <AuthGate>
+          <div className="flex h-screen min-h-0 flex-col">
+            <OrgSessionBar />
+            <div className="min-h-0 flex-1">
+              <AppShell>{(active) => renderWorkspace(active)}</AppShell>
             </div>
-          </AuthGate>
-        )}
+          </div>
+        </AuthGate>
       </QueryClientProvider>
     </trpc.Provider>
   );
