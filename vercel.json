@@ -1,23 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "installCommand": "npm ci && npm --prefix server ci && npm --prefix client install --legacy-peer-deps --no-audit --no-fund",
-  "buildCommand": "cd client && npm exec vite build",
+  "installCommand": "npm ci",
+  "buildCommand": "npm --prefix client run build",
   "outputDirectory": "client/dist",
   "images": {
     "sizes": [384, 512, 768, 1024, 1536],
     "domains": ["workeragent.cloud", "images.unsplash.com", "i.imgur.com"]
   },
   "redirects": [
-    {
-      "source": "/sitemap.xml",
-      "destination": "/api/sitemap.xml",
-      "permanent": true
-    },
-    {
-      "source": "/robots.txt",
-      "destination": "/api/robots.txt",
-      "permanent": true
-    },
     {
       "source": "/www",
       "destination": "/",
@@ -26,20 +16,12 @@
   ],
   "rewrites": [
     {
-      "source": "/sitemap.xml",
-      "destination": "/api/sitemap.xml"
-    },
-    {
-      "source": "/robots.txt",
-      "destination": "/api/robots.txt"
-    },
-    {
       "source": "/dashboard",
-      "destination": "/index.html"
+      "destination": "/dashboard/index.html"
     },
     {
       "source": "/dashboard/:path*",
-      "destination": "/index.html"
+      "destination": "/dashboard/index.html"
     }
   ],
   "headers": [
@@ -58,19 +40,34 @@
       ]
     },
     {
+      "source": "/dashboard",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive, nosnippet" }
+      ]
+    },
+    {
+      "source": "/dashboard/:path*",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive, nosnippet" }
+      ]
+    },
+    {
       "source": "/assets/:path*",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
-    }
-  ],
-  "routes": [
+    },
     {
-      "src": "/sitemap.xml",
-      "status": 200,
-      "headers": {
-        "Content-Type": "application/xml"
-      }
+      "source": "/robots.txt",
+      "headers": [
+        { "key": "Content-Type", "value": "text/plain; charset=utf-8" }
+      ]
+    },
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        { "key": "Content-Type", "value": "application/xml; charset=utf-8" }
+      ]
     }
   ]
 }
