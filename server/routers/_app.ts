@@ -44,7 +44,7 @@ export type AppRouter = typeof appRouter;
 export const appRouterV1 = appRouter;
 
 export const appRouterV2 = router({
-  ...appRouter._def.queries,
-  ...appRouter._def.mutations,
-  ...appRouter._def.subscriptions,
+  ...(appRouter._def as any).queries,
+  ...(appRouter._def as any).mutations,
+  ...(appRouter._def as any).subscriptions,
 });

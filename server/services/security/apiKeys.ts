@@ -46,7 +46,7 @@ export async function createApiKey(input: {
     expiresAt: input.expiresAt ?? null,
     lastRotatedAt: new Date(),
     createdAt: new Date(),
-  }).then(([r]) => r as ApiKeyRecord);
+  }).then(([r]) => r as unknown as ApiKeyRecord);
 
   logger.info({ apiKeyId: record.id, userId: input.userId }, "api_key_created");
   return { record, raw };

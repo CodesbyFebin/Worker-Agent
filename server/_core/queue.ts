@@ -14,7 +14,7 @@ import { metrics } from "./metrics";
  */
 export const connection: ConnectionOptions = new IORedis(env.REDIS_URL, {
   maxRetriesPerRequest: null,
-});
+}) as ConnectionOptions;
 
 export const QUEUE_NAMES = {
   GOD_MACHINE_CHAIN: "god-machine-chain",

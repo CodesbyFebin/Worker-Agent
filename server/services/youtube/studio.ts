@@ -182,7 +182,7 @@ export async function synthesizeVoice(params: {
     if (!res.ok) {
       throw new Error(`ElevenLabs TTS failed (${res.status}): ${await res.text()}`);
     }
-    await fs.writeFile(audioPath, Buffer.from(await res.arrayBuffer()));
+    await fs.writeFile(audioPath, Buffer.from(await res.arrayBuffer()) as Uint8Array);
     return { audioPath, provider: "elevenlabs" };
   }
 
@@ -266,7 +266,7 @@ export async function assembleVideo(params: {
       const dest = path.join(params.outputDir, `broll-${i}.mp4`);
       const res = await fetch(params.brollUrls[i]!);
       if (!res.ok) continue;
-      await fs.writeFile(dest, Buffer.from(await res.arrayBuffer()));
+      await fs.writeFile(dest, Buffer.from(await res.arrayBuffer()) as Uint8Array);
       clipPaths.push(dest);
     }
   }
@@ -426,10 +426,10 @@ export async function uploadVideoForChannel(params: {
   const multipartBody = Buffer.concat([
     Buffer.from(
       `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: video/mp4\r\n\r\n`,
-    ),
-    videoBuffer,
-    Buffer.from(`\r\n--${boundary}--`),
-  ]);
+    ) as any,
+    videoBuffer as any,
+    Buffer.from(`\r\n--${boundary}--`) as any,
+  ]) as unknown as Uint8Array<ArrayBuffer>;
 
   const response = await fetch(
     "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=multipart&part=snippet,status",

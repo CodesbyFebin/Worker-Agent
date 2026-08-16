@@ -34,10 +34,10 @@ export const publishToYoutube: PublishAdapter = async (content) => {
   const multipartBody = Buffer.concat([
     Buffer.from(
       `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: video/*\r\n\r\n`,
-    ),
-    videoBuffer,
-    Buffer.from(`\r\n--${boundary}--`),
-  ]);
+    ) as any,
+    videoBuffer as any,
+    Buffer.from(`\r\n--${boundary}--`) as any,
+  ]) as unknown as Uint8Array<ArrayBuffer>;
 
   const response = await fetch(
     "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=multipart&part=snippet,status",

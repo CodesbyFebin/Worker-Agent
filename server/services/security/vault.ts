@@ -26,7 +26,7 @@ export async function writeSecret(input: {
     createdBy: input.createdBy,
     expiresAt: input.expiresAt ?? null,
     createdAt: new Date(),
-  }).then(([r]) => r as typeof vaultSecrets.$inferSelect);
+  }).then(([r]) => r as unknown as typeof vaultSecrets.$inferSelect);
 
   logger.info({ vaultSecretId: record.id, provider: input.provider }, "vault_secret_written");
   return record;

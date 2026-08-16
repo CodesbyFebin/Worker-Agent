@@ -6,6 +6,7 @@ import { trpc } from "./lib/trpc";
 import { AppShell, type WorkspaceId } from "./components/AppShell";
 import { AuthGate } from "./components/AuthGate";
 import { OrgSessionBar } from "./components/OrgSessionBar";
+import { LandingPage } from "./marketing/LandingPage";
 import { CommandCenter } from "./mission-control/CommandCenter";
 import { ScriptStudioWorkspace } from "./features/script-studio/ScriptStudioWorkspace";
 import { EvidenceArtifactsWorkspace } from "./features/evidence/EvidenceArtifactsWorkspace";
@@ -101,10 +102,10 @@ export default function App() {
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
     trpc.createClient({
-      transformer: superjson,
       links: [
         httpBatchLink({
           url: API_URL,
+          transformer: superjson,
           fetch(url, options) {
             return fetch(url, { ...options, credentials: "include" });
           },
@@ -113,17 +114,32 @@ export default function App() {
     }),
   );
 
+  const isPublicLanding = window.location.pathname === "/" || window.location.pathname.startsWith("/docs");
+
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <AuthGate>
-          <div className="flex h-screen min-h-0 flex-col">
-            <OrgSessionBar />
-            <div className="min-h-0 flex-1">
-              <AppShell>{(active) => renderWorkspace(active)}</AppShell>
+        {isPublicLanding ? (
+          window.location.pathname.startsWith("/docs") ? (
+            <div className="min-h-screen bg-[#06080c] p-8 text-[var(--color-text-primary)]">
+              <p className="text-sm text-[var(--color-text-muted)]">
+                Documentation is served as static VitePress pages. If you see this message in
+                development, run <code>npm run docs:dev</code> in a separate terminal.
+              </p>
             </div>
-          </div>
-        </AuthGate>
+          ) : (
+            <LandingPage onLaunchApp={() => window.location.assign("/dashboard")} />
+          )
+        ) : (
+          <AuthGate>
+            <div className="flex h-screen min-h-0 flex-col">
+              <OrgSessionBar />
+              <div className="min-h-0 flex-1">
+                <AppShell>{(active) => renderWorkspace(active)}</AppShell>
+              </div>
+            </div>
+          </AuthGate>
+        )}
       </QueryClientProvider>
     </trpc.Provider>
   );

@@ -12,7 +12,7 @@ export const logger = pino(
       log: (log) => {
         if (isDevelopment) return log;
         return {
-          ts: new Date(log.ts as number | string | Date).toISOString(),
+          ts: log.ts ? new Date(log.ts as number | string | Date).toISOString() : new Date().toISOString(),
           lvl: log.level,
           msg: log.msg,
           ...log,
