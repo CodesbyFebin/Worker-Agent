@@ -60,11 +60,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Cyberteckmaster/Worker-Agent.git"
+    "url": "https://github.com/CodesbyFebin/Worker-Agent.git"
   },
   "homepage": "https://workeragent.cloud",
   "bugs": {
-    "url": "https://github.com/Cyberteckmaster/Worker-Agent/issues"
+    "url": "https://github.com/CodesbyFebin/Worker-Agent/issues"
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.10",
