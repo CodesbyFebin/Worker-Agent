@@ -22,7 +22,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "coverage": "vitest run --coverage && open coverage/index.html",
-    "build": "npm --prefix server run build && npm --prefix client run build",
+    "build": "npm --prefix client run build && npm run prerender && npm run docs:build && npm --prefix server run build",
     "validate": "npm run typecheck && npm run lint && npm run test && npm run build",
     "validate:ci": "npm run typecheck && npm run lint && npm run test:coverage && npm run build",
     "db:push": "npx drizzle-kit push",
@@ -35,7 +35,6 @@
     "docs:dev": "npx vitepress dev docs",
     "docs:build": "npx vitepress build docs",
     "prerender": "cd client && node scripts/prerender-landing.mjs",
-    "build": "npm --prefix client run build && npm run prerender && npm run docs:build && npm --prefix server run build",
     "e2e:install": "npx playwright install-deps chromium firefox webkit"
   },
   "keywords": [
@@ -71,6 +70,7 @@
   "devDependencies": {
     "drizzle-kit": "^0.31.10",
     "sitemap": "^7.1.0",
+    "vitepress": "^1.6.4",
     "vitest": "^4.1.10",
     "zod": "^3.23.8"
   },

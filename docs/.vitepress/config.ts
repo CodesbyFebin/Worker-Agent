@@ -5,6 +5,12 @@ export default defineConfig({
   description: 'Mission Control for AI-powered content networks',
   base: '/docs/',
   outDir: '../client/dist/docs',
+  ignoreDeadLinks: true,
+  build: {
+    sitemap: {
+      hostname: 'https://workeragent.cloud',
+    },
+  },
   head: [
     ['meta', { name: 'theme-color', content: '#1a1a2e' }],
     ['meta', { property: 'og:title', content: 'Worker Agent.Cloud Documentation' }],
