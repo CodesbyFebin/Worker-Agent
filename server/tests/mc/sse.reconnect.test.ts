@@ -159,11 +159,11 @@ integrationSuite("Mission Control durable SSE", () => {
         expect(new Set([...firstSeen, ...secondSeen]).size).toBe(25);
       } finally {
         secondController.abort();
-        await closeServer(secondServer);
+        await closeServer(secondServer.server);
       }
     } finally {
       firstController.abort();
-      await closeServer(firstServer);
+      await closeServer(firstServer.server);
     }
   }, 20_000);
 
