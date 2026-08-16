@@ -1,7 +1,7 @@
 {
   "name": "worker-agent-cloud",
   "version": "2.0.0",
-  "description": "Worker Agent.Cloud — Mission Control for AI-powered content networks. Research trends, create content, enforce governance, run channels, and learn from every result. Includes MCP client for connecting external Model Context Protocol servers.",
+  "description": "Worker Agent.Cloud \u2014 Mission Control for AI-powered content networks. Research trends, create content, enforce governance, run channels, and learn from every result. Includes MCP client for connecting external Model Context Protocol servers.",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -73,5 +73,9 @@
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "packageManager": "npm@10.8.0",
+  "dependencies": {
+    "drizzle-orm": "^0.45.2"
   }
 }
