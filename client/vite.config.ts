@@ -17,6 +17,14 @@ export default defineConfig({
     },
     dedupe: ["react", "react-dom", "@tanstack/react-query"],
   },
+  build: {
+    rollupOptions: {
+      input: {
+        public: path.resolve(root, "index.html"),
+        dashboard: path.resolve(root, "dashboard/index.html"),
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {
