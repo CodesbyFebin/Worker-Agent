@@ -149,6 +149,22 @@ See [deployment/README.md](./deployment/README.md) for full instructions.
 
 ---
 
+## ✨ Content Authority & SEO
+
+WorkerAgent publishes evidence-gated content under `/learn/`. Not all planned
+topics are published — indexability is gated by evidence verification and
+peer review. See the DC design files for current content structure:
+
+- `Worker Agent.dc.html` — Dashboard shell (Nocturne: deep black + violet glow)
+- `Worker Agents Guide.dc.html` — Long-form evidence-gated reference guide
+- `Pillar - Worker Agents by Industry.dc.html` — PSEO pillar (healthcare, finance, e-commerce, etc.)
+- `Pillar - Types of Worker Agents.dc.html` — PSEO pillar (task, workflow, conversational, autonomous, hybrid)
+- `Pillar - Benefits of Worker Agents.dc.html` — PSEO pillar (quantified impact, risk mitigation)
+
+Each pillar page uses an **Evidence Matrix** table with verification status
+(VERIFIED / PARTIAL / UNVERIFIED / NOT PUBLIC) to comply with Google's 2026
+Generative Search guidelines and AEO/GEO best practices.
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md).

@@ -1,27 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-<<<<<<< ours
-  "installCommand": "npm ci && npm --prefix server ci && npm --prefix client install --no-audit --no-fund",
-  "buildCommand": "npm --prefix client run build",
-=======
   "installCommand": "npm ci && npm --prefix client install --legacy-peer-deps --no-audit --no-fund",
   "buildCommand": "npm run typecheck && npm run build",
->>>>>>> theirs
   "outputDirectory": "client/dist",
   "rewrites": [
-<<<<<<< ours
-    { "source": "/dashboard", "destination": "/index.html" },
-    { "source": "/dashboard/:path*", "destination": "/index.html" },
-    { "source": "/missions", "destination": "/index.html" },
-    { "source": "/missions/:path*", "destination": "/index.html" },
-    { "source": "/intelligence", "destination": "/index.html" },
-    { "source": "/content", "destination": "/index.html" },
-    { "source": "/channels", "destination": "/index.html" },
-    { "source": "/automation", "destination": "/index.html" },
-    { "source": "/governance", "destination": "/index.html" },
-    { "source": "/learn", "destination": "/index.html" },
-    { "source": "/settings", "destination": "/index.html" }
-=======
     {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap.xml"
@@ -42,7 +24,6 @@
       "source": "/dashboard/:path*",
       "destination": "/index.html"
     }
->>>>>>> theirs
   ],
   "headers": [
     {
