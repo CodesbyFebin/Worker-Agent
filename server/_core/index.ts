@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import * as trpcExpress from "@trpc/server/adapters/express";
 import { appRouter, appRouterV1 } from "../routers/_app";
 import { versionedRestRouter } from "../routers/rest.index";
@@ -23,6 +24,25 @@ import { logger, requestLogger } from "./logger";
 import { initTracing, shutdownTracing } from "./tracing";
 
 const app = express();
+
+app.use(
+  helmet({
+    crossOriginEmbedderPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "ws:", "wss:"],
+        frameAncestors: ["'none'"],
+      },
+    },
+    referrerPolicy: { policy: "no-referrer" },
+    xssFilter: true,
+    noSniff: true,
+  }),
+);
 
 const clientOrigin = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
 
