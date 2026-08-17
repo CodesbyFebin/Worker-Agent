@@ -23,6 +23,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Migration drift guard
+        run: node scripts/drift-guard.mjs
+
       - name: Security - Dependency audit
         run: npm audit --audit-level=moderate || true
 
