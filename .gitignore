@@ -8,6 +8,5 @@ dist/
 .DS_Store
 client/dist/
 server/dist/
-drizzle/migrations/
 
 .llm-prefs.json

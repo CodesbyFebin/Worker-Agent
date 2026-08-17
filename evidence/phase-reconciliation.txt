@@ -1,0 +1,67 @@
+Schema tables: 59
+Baseline tables: 59
+Phase SQL tables: 8
+Schema = Baseline: MATCH
+
+Phase SQL coverage:
+  ❌ agent_definitions (gap)
+  ❌ agent_evaluation_runs (gap)
+  ❌ agent_evaluations (gap)
+  ✅ agent_events
+  ❌ agent_executions (gap)
+  ✅ agent_tasks
+  ❌ agent_versions (gap)
+  ❌ agent_worktrees (gap)
+  ❌ api_keys (gap)
+  ❌ approval_requests (gap)
+  ❌ artifact_versions (gap)
+  ❌ artifacts (gap)
+  ❌ audit_logs (gap)
+  ❌ brand_guidelines (gap)
+  ✅ claim_ledger
+  ✅ content_campaigns
+  ✅ content_ops_pipelines
+  ❌ credential_refs (gap)
+  ❌ dead_letter_jobs (gap)
+  ❌ evidence_snapshots (gap)
+  ❌ evidence_sources (gap)
+  ❌ generated_metadata (gap)
+  ❌ governance_policies (gap)
+  ❌ idempotency_records (gap)
+  ❌ knowledge_embeddings (gap)
+  ❌ mcp_servers (gap)
+  ❌ mfa_backup_codes (gap)
+  ❌ mfa_factors (gap)
+  ❌ model_policies (gap)
+  ❌ org_budgets (gap)
+  ❌ organization_members (gap)
+  ❌ organizations (gap)
+  ❌ permissions (gap)
+  ❌ prompt_definitions (gap)
+  ❌ prompt_versions (gap)
+  ❌ research_archive (gap)
+  ❌ role_permissions (gap)
+  ❌ roles (gap)
+  ❌ script_sections (gap)
+  ✅ scripts
+  ❌ security_events (gap)
+  ❌ sessions (gap)
+  ❌ tool_definitions (gap)
+  ❌ tool_gateway_policies (gap)
+  ❌ tool_invocations (gap)
+  ❌ tool_policies (gap)
+  ❌ topic_taxonomies (gap)
+  ✅ users
+  ❌ vault_secrets (gap)
+  ❌ webhooks (gap)
+  ❌ winning_patterns (gap)
+  ❌ workflow_definitions (gap)
+  ❌ workflow_run_events (gap)
+  ❌ workflow_runs (gap)
+  ❌ workflow_step_runs (gap)
+  ❌ workflow_versions (gap)
+  ❌ youtube_channels (gap)
+  ❌ youtube_trends (gap)
+  ❌ youtube_videos (gap)
+
+Covered: 7/59
