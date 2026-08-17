@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     include: ["server/tests/**/*.test.ts", "client/src/**/*.test.ts"],
     environment: "node",
-    reporters: ["default", "html"],
+    reporters: ["default"],
     setupFiles: ["./vitest.setup.ts"],
     coverage: {
       provider: "c8",
