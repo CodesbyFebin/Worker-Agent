@@ -81,6 +81,10 @@
   },
   "packageManager": "npm@10.8.0",
   "dependencies": {
+    "@rolldown/binding-linux-x64-gnu": "^1.2.4",
     "monaco-editor": "^0.56.0"
+  },
+  "optionalDependencies": {
+    "@rolldown/binding-linux-x64-gnu": "1.2.4"
   }
 }
