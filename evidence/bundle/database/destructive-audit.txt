@@ -1,0 +1,1 @@
+destructive audit: 0 DROP, 0 TRUNCATE, 0 DELETE

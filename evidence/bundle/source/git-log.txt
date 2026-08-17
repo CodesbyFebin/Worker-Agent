@@ -1,0 +1,10 @@
+4a4fb43 (HEAD -> g2/migration-baseline) feat(security): add helmet CSP/headers, fix npm ci optional deps
+3618374 (origin/g2/migration-baseline) fix(ci): ensure @rolldown/binding-linux-x64-gnu installs in npm ci
+344377e fix(ci): add --include=optional to npm ci for rolldown native binding
+a327e7f feat(ci): add migration drift guard + db:migrate script
+46fb0c2 feat(db): formalize Option B — commit migration SQL, add db:migrate script
+416a416 feat(db): commit Drizzle baseline migration + add db:migrate script
+b5f7437 fix: resolve @types/node, esbuild, monaco-editor dependency conflicts
+31ebdb8 G3: add post-build ESM import fixer script
+d63d3b0 G3: fix TypeScript 7 + tRPC v11 + Node.js 22 compatibility
+04c9171 G2: add mariadb replay verification script
