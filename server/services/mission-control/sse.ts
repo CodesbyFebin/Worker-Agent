@@ -1,3 +1,8 @@
+import type { Express, Request, Response } from "express";
+import { pool } from "../../_core/db";
+import { logger } from "../../_core/logger";
+
+interface StreamEvent {
 import type { Request, Response } from "express";
 import IORedis from "ioredis";
 import { pool } from "../../_core/db";
@@ -16,6 +21,26 @@ export interface StreamEvent {
   payload: unknown;
 }
 
+type Subscriber = (event: StreamEvent) => void;
+const subscribers = new Map<string, Set<Subscriber>>();
+
+export function publishMissionControlStreamEvent(event: StreamEvent): void {
+  const handlers = subscribers.get(event.organizationId);
+  if (!handlers) return;
+  for (const handler of handlers) handler(event);
+}
+
+function subscribe(organizationId: string, handler: Subscriber): () => void {
+  let handlers = subscribers.get(organizationId);
+  if (!handlers) {
+    handlers = new Set();
+    subscribers.set(organizationId, handlers);
+  }
+  handlers.add(handler);
+  return () => {
+    handlers?.delete(handler);
+    if (handlers?.size === 0) subscribers.delete(organizationId);
+  };
 function parseCursor(req: Request): number | null {
   const raw =
     (req.headers["last-event-id"] as string | undefined) ??
@@ -82,6 +107,25 @@ async function getEventsRange(
     aggregateVersion: Number(row.aggregate_version),
     type: row.event_type,
     traceId: row.trace_id,
+    payload: JSON.parse(row.payload),
+  }));
+}
+
+function resolveOrganizationId(req: Request): string | null {
+  return (req as any).context?.organizationId ?? (req as any).org?.id ?? null;
+}
+
+export function setupMissionControlSSE(app: Express): void {
+  app.get("/events", async (req: Request, res: Response) => {
+    const organizationId = resolveOrganizationId(req);
+    if (!organizationId) return res.status(401).end();
+
+    const raw = (req.headers["last-event-id"] as string | undefined) ??
+      (typeof req.query.after === "string" ? req.query.after : undefined);
+    const cursor = Number(raw ?? 0);
+    if (!Number.isSafeInteger(cursor) || cursor < 0) {
+      return res.status(400).json({ error: "Invalid cursor" });
+    }
     payload: (() => {
       try {
         return JSON.parse(row.payload);
@@ -149,6 +193,47 @@ export async function handleMissionControlEvents(
     res.setHeader("Connection", "keep-alive");
     res.flushHeaders?.();
 
+    let replaying = true;
+    let lastSent = cursor;
+    const pending: StreamEvent[] = [];
+
+    const send = (event: StreamEvent) => {
+      if (event.streamPosition <= lastSent) return;
+      res.write(`id: ${event.streamPosition}\n`);
+      res.write(`data: ${JSON.stringify(event)}\n\n`);
+      lastSent = event.streamPosition;
+    };
+
+    const unsubscribe = subscribe(organizationId, (event) => {
+      if (replaying) {
+        pending.push(event);
+        return;
+      }
+      send(event);
+    });
+
+    try {
+      const highWaterMark = await getCurrentStreamPosition(organizationId);
+      const missed = await getEventsRange(organizationId, cursor, highWaterMark);
+      for (const event of missed) send(event);
+
+      while (pending.length > 0) {
+        const batch = pending.splice(0).sort((a, b) => a.streamPosition - b.streamPosition);
+        for (const event of batch) send(event);
+      }
+      replaying = false;
+    } catch (error) {
+      unsubscribe();
+      logger.error({ err: error, organizationId }, "mission control SSE replay failed");
+      if (!res.headersSent) return res.status(500).end();
+      return res.end();
+    }
+
+    const heartbeat = setInterval(() => res.write(": heartbeat\n\n"), 15_000);
+    req.on("close", () => {
+      clearInterval(heartbeat);
+      unsubscribe();
+    });
     const highWaterMark = await getCurrentStreamPosition(organizationId);
     const missed = await getEventsRange(organizationId, cursor, highWaterMark);
     for (const event of missed) send(event);
