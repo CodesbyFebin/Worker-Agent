@@ -7,7 +7,6 @@ import { webhookRouter } from "../routers/webhook";
 import { createContext } from "./context";
 import { env } from "./env";
 import { shutdownQueues } from "./queue";
-import { subscribeToEvents } from "./events";
 import { registerHealthRoutes } from "./health";
 import { registerRobotsRoutes } from "./robots";
 import { ensureAuthBootstrap } from "./auth/bootstrap";
@@ -21,6 +20,7 @@ import { redactString } from "./redact";
 import { metrics, metricsText } from "./metrics";
 import { logger, requestLogger } from "./logger";
 import { initTracing, shutdownTracing } from "./tracing";
+import { handleMissionControlEvents } from "../services/mission-control/sse";
 
 const app = express();
 
@@ -95,8 +95,9 @@ app.use("/api/v1", apiLimiter, versionedRestRouter);
 app.use("/webhooks", webhookRouter);
 
 /**
- * Org-scoped SSE stream. Requires a valid session cookie; events are filtered
- * to the session's active organization (or x-organization-id membership).
+ * Org-scoped durable Mission Control SSE stream. Authentication and tenant
+ * membership are resolved here; the stream handler receives only the verified
+ * active organization id.
  */
 app.get("/events", apiLimiter, async (req, res) => {
   const cookies = parseCookies(req.headers.cookie);
@@ -127,24 +128,7 @@ app.get("/events", apiLimiter, async (req, res) => {
     if (membership) organizationId = membership.organizationId;
   }
 
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.flushHeaders?.();
-  res.write(`data: ${JSON.stringify({ type: "connected", organizationId })}\n\n`);
-
-  const unsub = subscribeToEvents((event) => {
-    res.write(`data: ${JSON.stringify(event)}\n\n`);
-  }, organizationId);
-
-  const heartbeat = setInterval(() => {
-    res.write(`: heartbeat\n\n`);
-  }, 25000);
-
-  req.on("close", () => {
-    clearInterval(heartbeat);
-    unsub();
-  });
+  await handleMissionControlEvents(req, res, organizationId);
 });
 
 async function main() {
@@ -184,4 +168,3 @@ async function main() {
 }
 
 void main();
-

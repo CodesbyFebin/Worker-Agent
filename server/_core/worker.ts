@@ -1,5 +1,5 @@
 /**
- * Worker process entry — BullMQ processors only.
+ * Worker process entry — BullMQ processors plus durable Mission Control outbox.
  * Long-running agent/campaign/publish/workflow jobs must not run inside the API process.
  */
 import { registerGodMachineWorker } from "./god-machine";
@@ -11,6 +11,7 @@ import {
   registerPythonAudioAnalysisWorker,
   registerPythonThumbnailScoreWorker,
 } from "../services/python/workers";
+import { startOutboxWorker } from "../services/mission-control/outbox";
 import { shutdownQueues } from "./queue";
 import { logger } from "./logger";
 
@@ -25,14 +26,28 @@ const youtubeAnalyticsWorker = registerYoutubeAnalyticsWorker();
 const pythonTranscriptionWorker = registerPythonTranscriptionWorker();
 const pythonAudioAnalysisWorker = registerPythonAudioAnalysisWorker();
 const pythonThumbnailScoreWorker = registerPythonThumbnailScoreWorker();
+const missionControlOutboxWorker = startOutboxWorker();
 
 logger.info(
-  { workers: ["god-machine-chain", "campaign-day", "scheduled-publish", "workflow-step", "youtube-analytics", "python-transcription", "python-audio-analysis", "python-thumbnail-score"] },
+  {
+    workers: [
+      "god-machine-chain",
+      "campaign-day",
+      "scheduled-publish",
+      "workflow-step",
+      "youtube-analytics",
+      "python-transcription",
+      "python-audio-analysis",
+      "python-thumbnail-score",
+      "mission-control-outbox",
+    ],
+  },
   "workers_registered",
 );
 
 async function shutdown(signal: string) {
   logger.info({ signal }, "worker_shutdown_started");
+  await missionControlOutboxWorker.stop();
   await Promise.all([
     godMachineWorker.close(),
     campaignDayWorker.close(),

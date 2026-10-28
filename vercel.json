@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm ci",
-  "buildCommand": "npm --prefix client run build",
+  "buildCommand": "npm run build:web",
   "outputDirectory": "client/dist",
   "images": {
     "sizes": [384, 512, 768, 1024, 1536],

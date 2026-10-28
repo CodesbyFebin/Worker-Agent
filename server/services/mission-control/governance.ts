@@ -59,6 +59,7 @@ export function computeSubjectDigest(params: {
       canonicalJson({
         taskInput: {
           id: params.task.id,
+          runId: params.task.runId ?? null,
           title: params.task.title,
           assignedRole: params.task.assignedRole,
         },
